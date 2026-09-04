@@ -28,22 +28,22 @@
 
 作者實際寫下的字。**唯一的事實來源**，任何改寫都不回寫它。
 
-- 識別碼：`originalText`、`posts.original_text`
+- 識別碼：`originalText`、`posts.original_text`、`comments.original_text`、`messages.original_text`
 - 避免：「本文」（易與「內文」混淆）、「raw」、「source」
 
 ### 語氣（tone）
 
 讀者選擇的呈現風格。這是本平台取代「介面語言」的那個設定——使用者切的不是語言，是語氣。
 
-- 識別碼：`tone`、`Tone`、`users.preferred_tone`
-- 值域定義在 `shared/tones.ts`；`original` 是「不改寫」這個特例值，也算一種語氣選項
+- 識別碼：`tone`、`Tone`、`users.tone`
+- 值域定義在 `shared/utils/tones.ts`；`original` 是「不改寫」這個特例值，也算一種語氣選項
 - 避免：「風格」「濾鏡」「模式」——`filter` 與 `mode` 在程式碼裡另有含義
 
 ### 改寫（rendition）
 
-一則貼文在某個語氣下的 AI 產出結果。一則貼文對每種語氣各有一份改寫。
+一則內容（貼文、留言、訊息）在某位讀者的語氣設定下的 AI 產出結果。它是衍生資料，目前不落地，每次呼叫重算。
 
-- 識別碼：`renditions` 資料表、`Rendition`、`renderPost()`
+- 識別碼：`RenditionResult`、`renderContent()`
 - 避免：「翻譯」（會誤導成語言轉換）、「潤稿」（暗示原文有瑕疵）、「版本」（`revision` 另指編輯歷史，本專案沒有這概念）
 
 ### 改寫幅度

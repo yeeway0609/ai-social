@@ -32,7 +32,10 @@ async function handleSubmitSettings() {
 </script>
 
 <template>
-  <form class="space-y-8" @submit.prevent="handleSubmitSettings">
+  <form
+    class="space-y-8"
+    @submit.prevent="handleSubmitSettings"
+  >
     <fieldset class="space-y-3">
       <legend class="mb-3 text-sm font-medium">
         你想用什麼語氣讀別人的話？
@@ -43,7 +46,13 @@ async function handleSubmitSettings() {
         class="flex cursor-pointer gap-3 rounded-lg border p-3 transition"
         :class="tone === option.id ? 'border-primary bg-primary/5' : 'border-default hover:bg-elevated'"
       >
-        <input v-model="tone" class="mt-1 accent-primary" type="radio" name="tone" :value="option.id">
+        <input
+          v-model="tone"
+          class="mt-1 accent-primary"
+          type="radio"
+          name="tone"
+          :value="option.id"
+        >
         <span class="min-w-0 flex-1">
           <span class="block font-medium">{{ option.label }}</span>
           <span class="block text-sm text-muted">{{ option.description }}</span>
@@ -69,6 +78,12 @@ async function handleSubmitSettings() {
       />
     </UFormField>
 
-    <UButton class="w-full justify-center" type="submit" size="lg" :loading="isSubmitting" :label="props.submitLabel" />
+    <UButton
+      class="w-full justify-center"
+      type="submit"
+      size="lg"
+      :loading="isSubmitting"
+      :label="props.submitLabel"
+    />
   </form>
 </template>

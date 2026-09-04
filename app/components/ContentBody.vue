@@ -76,22 +76,46 @@ async function handleClickReveal() {
 </script>
 
 <template>
-  <div ref="root" class="min-w-0">
-    <div v-if="isLoading" class="space-y-2 py-0.5">
+  <div
+    ref="root"
+    class="min-w-0"
+  >
+    <div
+      v-if="isLoading"
+      class="space-y-2 py-0.5"
+    >
       <USkeleton class="h-4 w-full" />
       <USkeleton class="h-4 w-4/5" />
     </div>
-    <p v-else class="whitespace-pre-wrap break-words leading-relaxed" :class="compact ? 'text-sm' : 'text-[15px]'">
+    <p
+      v-else
+      class="whitespace-pre-wrap break-words leading-relaxed"
+      :class="compact ? 'text-sm' : 'text-[15px]'"
+    >
       {{ displayText }}
     </p>
 
     <div class="mt-1.5 flex flex-wrap items-center gap-1.5">
       <template v-if="!isLoading">
-        <UBadge v-if="isOriginalShown" color="neutral" variant="subtle" size="sm" icon="i-lucide-quote">
+        <UBadge
+          v-if="isOriginalShown"
+          color="neutral"
+          variant="subtle"
+          size="sm"
+          icon="i-lucide-quote"
+        >
           原文
         </UBadge>
-        <UBadge v-else color="primary" variant="subtle" size="sm" icon="i-lucide-sparkles">
-          AI 改寫<template v-if="scaleLabel">・{{ scaleLabel }}</template>
+        <UBadge
+          v-else
+          color="primary"
+          variant="subtle"
+          size="sm"
+          icon="i-lucide-sparkles"
+        >
+          AI 改寫<template v-if="scaleLabel">
+            ・{{ scaleLabel }}
+          </template>
         </UBadge>
       </template>
       <UButton

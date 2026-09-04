@@ -34,15 +34,48 @@ async function handleSubmitLogin() {
       每個人用自己選的語氣，讀同一個世界。
     </p>
 
-    <form class="mt-10 space-y-4" @submit.prevent="handleSubmitLogin">
-      <UFormField label="帳號" name="handle">
-        <UInput v-model="form.handle" class="w-full" autocomplete="username" autocapitalize="none" placeholder="handle" size="lg" />
+    <form
+      class="mt-10 space-y-4"
+      @submit.prevent="handleSubmitLogin"
+    >
+      <UFormField
+        label="帳號"
+        name="handle"
+      >
+        <UInput
+          v-model="form.handle"
+          class="w-full"
+          autocomplete="username"
+          autocapitalize="none"
+          placeholder="handle"
+          size="lg"
+        />
       </UFormField>
-      <UFormField label="密碼" name="password">
-        <UInput v-model="form.password" class="w-full" type="password" autocomplete="current-password" size="lg" />
+      <UFormField
+        label="密碼"
+        name="password"
+      >
+        <UInput
+          v-model="form.password"
+          class="w-full"
+          type="password"
+          autocomplete="current-password"
+          size="lg"
+        />
       </UFormField>
-      <UAlert v-if="errorMessage" color="error" variant="soft" :title="errorMessage" />
-      <UButton class="w-full justify-center" type="submit" size="lg" :loading="isSubmitting" :disabled="!form.handle || !form.password">
+      <UAlert
+        v-if="errorMessage"
+        color="error"
+        variant="soft"
+        :title="errorMessage"
+      />
+      <UButton
+        class="w-full justify-center"
+        type="submit"
+        size="lg"
+        :loading="isSubmitting"
+        :disabled="!form.handle || !form.password"
+      >
         登入
       </UButton>
     </form>

@@ -14,6 +14,8 @@ const currentTone = computed(() => findTone(user.value?.tone ?? ORIGINAL_TONE))
 
 function isActive(to: string) {
   if (to === '/') return route.path === '/'
+  // 「我」分頁實際落在 /users/<自己的 handle>，路徑不含 /me
+  if (to === '/me') return route.path === '/me' || (!!user.value && route.path === `/users/${user.value.handle}`)
   return route.path.startsWith(to)
 }
 </script>
@@ -22,7 +24,10 @@ function isActive(to: string) {
   <div class="min-h-dvh bg-default text-default">
     <header class="sticky top-0 z-20 border-b border-default bg-default/90 backdrop-blur">
       <div class="mx-auto flex h-12 max-w-xl items-center justify-between px-4">
-        <NuxtLink to="/" class="text-lg font-semibold tracking-tight">
+        <NuxtLink
+          to="/"
+          class="text-lg font-semibold tracking-tight"
+        >
           AI Social
         </NuxtLink>
         <UButton
@@ -53,15 +58,24 @@ function isActive(to: string) {
       <slot />
     </main>
 
-    <nav v-if="user" class="fixed inset-x-0 bottom-0 z-20 border-t border-default bg-default/95 backdrop-blur">
+    <nav
+      v-if="user"
+      class="fixed inset-x-0 bottom-0 z-20 border-t border-default bg-default/95 backdrop-blur"
+    >
       <ul class="mx-auto grid max-w-xl grid-cols-4">
-        <li v-for="tab in TABS" :key="tab.to">
+        <li
+          v-for="tab in TABS"
+          :key="tab.to"
+        >
           <NuxtLink
             class="flex flex-col items-center gap-0.5 py-2 text-[11px]"
             :class="isActive(tab.to) ? 'text-primary' : 'text-muted'"
             :to="tab.to"
           >
-            <UIcon :name="tab.icon" class="size-6" />
+            <UIcon
+              :name="tab.icon"
+              class="size-6"
+            />
             {{ tab.label }}
           </NuxtLink>
         </li>

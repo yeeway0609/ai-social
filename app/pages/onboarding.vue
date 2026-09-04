@@ -20,7 +20,10 @@ async function handleSaved() {
       別人寫的每一句話，都會先換成這個語氣再給你看。你自己寫的永遠是原文。隨時可以在設定裡改。
     </p>
     <div class="mt-8">
-      <ToneSettingsForm submit-label="開始使用" @saved="handleSaved" />
+      <ToneSettingsForm
+        submit-label="開始使用"
+        @saved="handleSaved"
+      />
     </div>
   </div>
 </template>

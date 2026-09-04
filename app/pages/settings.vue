@@ -47,7 +47,10 @@ async function handleClickDeleteKey(target: AiProvider) {
         語氣設定
       </h1>
       <div class="mt-4">
-        <ToneSettingsForm submit-label="儲存" @saved="handleSaved" />
+        <ToneSettingsForm
+          submit-label="儲存"
+          @saved="handleSaved"
+        />
       </div>
     </section>
 
@@ -63,22 +66,60 @@ async function handleClickDeleteKey(target: AiProvider) {
         </p>
       </div>
 
-      <ul v-if="credentials.length" class="space-y-2">
-        <li v-for="credential in credentials" :key="credential.provider" class="flex items-center justify-between rounded-lg border border-default px-3 py-2 text-sm">
-          <span>{{ PROVIDER_LABELS[credential.provider] }}　<span class="font-mono text-muted">…{{ credential.hint }}</span></span>
-          <UButton color="neutral" variant="ghost" size="xs" icon="i-lucide-trash-2" aria-label="刪除金鑰" @click="handleClickDeleteKey(credential.provider)" />
+      <ul
+        v-if="credentials.length"
+        class="space-y-2"
+      >
+        <li
+          v-for="credential in credentials"
+          :key="credential.provider"
+          class="flex items-center justify-between rounded-lg border border-default px-3 py-2 text-sm"
+        >
+          <span>{{ PROVIDER_LABELS[credential.provider] }} <span class="font-mono text-muted">…{{ credential.hint }}</span></span>
+          <UButton
+            color="neutral"
+            variant="ghost"
+            size="xs"
+            icon="i-lucide-trash-2"
+            aria-label="刪除金鑰"
+            @click="handleClickDeleteKey(credential.provider)"
+          />
         </li>
       </ul>
 
-      <form class="space-y-3" @submit.prevent="handleSubmitKey">
-        <URadioGroup v-model="provider" orientation="horizontal" :items="providerItems" />
-        <UInput v-model="apiKey" class="w-full" type="password" autocomplete="off" placeholder="貼上 API key" />
-        <UButton type="submit" :loading="isSavingKey" :disabled="apiKey.trim().length < 20" label="儲存金鑰" />
+      <form
+        class="space-y-3"
+        @submit.prevent="handleSubmitKey"
+      >
+        <URadioGroup
+          v-model="provider"
+          orientation="horizontal"
+          :items="providerItems"
+        />
+        <UInput
+          v-model="apiKey"
+          class="w-full"
+          type="password"
+          autocomplete="off"
+          placeholder="貼上 API key"
+        />
+        <UButton
+          type="submit"
+          :loading="isSavingKey"
+          :disabled="apiKey.trim().length < 20"
+          label="儲存金鑰"
+        />
       </form>
     </section>
 
     <USeparator />
 
-    <UButton color="neutral" variant="outline" icon="i-lucide-log-out" label="登出" @click="logout" />
+    <UButton
+      color="neutral"
+      variant="outline"
+      icon="i-lucide-log-out"
+      label="登出"
+      @click="logout"
+    />
   </div>
 </template>
