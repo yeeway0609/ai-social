@@ -11,10 +11,11 @@ export type RewriteFn = (args: {
   model: string
   system: string
   original: string
+  timeoutMs: number
 }) => Promise<string>
 
-const anthropic: RewriteFn = async ({ apiKey, model, system, original }) => {
-  const response = await new Anthropic({ apiKey }).messages.create({
+const anthropic: RewriteFn = async ({ apiKey, model, system, original, timeoutMs }) => {
+  const response = await new Anthropic({ apiKey, timeout: timeoutMs, maxRetries: 0 }).messages.create({
     model,
     max_tokens: 1024,
     system,
@@ -27,8 +28,8 @@ const anthropic: RewriteFn = async ({ apiKey, model, system, original }) => {
     .trim()
 }
 
-const openai: RewriteFn = async ({ apiKey, model, system, original }) => {
-  const response = await new OpenAI({ apiKey }).responses.create({
+const openai: RewriteFn = async ({ apiKey, model, system, original, timeoutMs }) => {
+  const response = await new OpenAI({ apiKey, timeout: timeoutMs, maxRetries: 0 }).responses.create({
     model,
     instructions: system,
     input: original
@@ -41,4 +42,12 @@ export const REWRITE_FNS: Record<AiProvider, RewriteFn> = { anthropic, openai }
 export function modelFor(provider: AiProvider) {
   const { ai } = useRuntimeConfig()
   return provider === 'anthropic' ? ai.modelAnthropic : ai.modelOpenai
+}
+
+/** SDK 的逾時與額度錯誤各自對應不同的前端處置（重試 vs 導去設定金鑰），所以分開辨識。 */
+export function classifyProviderError(err: unknown): RenditionResult['error'] {
+  if (err instanceof Anthropic.APIConnectionTimeoutError || err instanceof OpenAI.APIConnectionTimeoutError) return 'timeout'
+  if (err instanceof Anthropic.AuthenticationError || err instanceof OpenAI.AuthenticationError) return 'no_ai_credential'
+  if (err instanceof Anthropic.RateLimitError || err instanceof OpenAI.RateLimitError) return 'no_ai_credential'
+  return 'provider_error'
 }

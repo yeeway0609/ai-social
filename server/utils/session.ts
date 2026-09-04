@@ -19,7 +19,10 @@ export function setSession(event: H3Event, userId: string) {
   })
 }
 
-/** 未登入回 null——匿名訪客也能瀏覽，只是改寫時只能吃團隊共用池。 */
+export function clearSessionCookie(event: H3Event) {
+  deleteCookie(event, COOKIE, { path: '/' })
+}
+
 export function getUserId(event: H3Event): string | null {
   const raw = getCookie(event, COOKIE)
   if (!raw) return null
@@ -32,5 +35,12 @@ export function getUserId(event: H3Event): string | null {
   const expected = Buffer.from(sign(userId))
 
   if (provided.length !== expected.length || !timingSafeEqual(provided, expected)) return null
+  return userId
+}
+
+/** 未登入不能用 App，所有需要登入的端點都從這裡拿 userId。 */
+export function requireUserId(event: H3Event): string {
+  const userId = getUserId(event)
+  if (!userId) throw createError({ statusCode: 401, statusMessage: 'unauthenticated' })
   return userId
 }

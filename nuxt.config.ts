@@ -29,7 +29,9 @@ export default defineNuxtConfig({
       poolAnthropic: '',
       poolOpenai: '',
       modelAnthropic: 'claude-haiku-4-5-20251001',
-      modelOpenai: 'gpt-5-mini'
+      modelOpenai: 'gpt-5-mini',
+      // 沒有金鑰時的本機替身：改寫只是在原文前加語氣標記，讓 UI 流程走得通
+      mock: false
     },
 
     public: {
