@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "statusMessage": "格式化編輯過的檔案",
+            "timeout": 90,
+            "command": "f=$(jq -r '.tool_response.filePath // .tool_input.file_path // empty'); case \"$f\" in *.vue|*.ts|*.mts|*.mjs) (cd \"$CLAUDE_PROJECT_DIR\" && pnpm exec eslint --fix \"$f\") ;; esac >/dev/null 2>&1 || true"
+          }
+        ]
+      }
+    ]
+  }
+}
