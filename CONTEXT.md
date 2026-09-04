@@ -74,3 +74,35 @@
 
 - 識別碼：`CredentialSource` 的 `pool`、環境變數 `NUXT_AI_POOL_*`
 - 避免：「額度」（指的是池裡的 token 數，不是池本身）
+
+### 自訂語氣指示（custom instruction）
+
+讀者自己寫的一段自由文字，疊加在所選預設語氣之上一起交給模型。
+
+- 識別碼：`customInstruction`、`users.custom_instruction`
+- 避免：「system prompt」（那是實作層的東西，讀者填的只是其中一段）、「prompt」
+
+### 引導設定（onboarding）
+
+首次登入時強制完成的語氣設定流程；完成與否以 `users.onboarded_at` 是否有值判定。
+
+- 識別碼：`onboarding`、`onboardedAt`
+- 避免：「新手教學」（不是教學，是必填設定）
+
+### 顯示原文（reveal original）
+
+讀者對單一則他人內容一次性切回原文的動作，不改全站語氣設定、不呼叫模型。
+
+- 識別碼：`revealOriginal`
+- 避免：「關閉改寫」（那聽起來像全站設定）
+
+## 內容物件
+
+| 概念 | 識別碼 | 說明 | 避免 |
+|---|---|---|---|
+| 貼文 | `post`、`posts` | 動態牆上的一則純文字內容 | 「文章」「動態」 |
+| 留言 | `comment`、`comments` | 掛在貼文下的一層回應 | 「回覆」（保留給日後樓中樓）、「評論」 |
+| 讚 | `like`、`likes` | 對貼文的一人一讚 | 「喜歡」「愛心」 |
+| 對話 | `conversation`、`conversations` | 兩位使用者之間唯一的 1：1 聊天 | 「聊天室」（指整個功能分頁，不指單一對話）、「房間」 |
+| 訊息 | `message`、`messages` | 對話內的一則純文字 | 「私訊」（指功能，不指單則） |
+| 內容類型 | `ContentKind`：`post`／`comment`／`message` | 改寫服務用來區分要改寫哪種內容 | 「target type」 |
