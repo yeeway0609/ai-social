@@ -26,3 +26,6 @@ logs
 .env*
 !.env.example
 .vercel
+
+# demo 帳號名單含密碼，不進 repo
+scripts/seed-users.json
