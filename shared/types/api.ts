@@ -27,6 +27,16 @@ export interface LoginRequest {
 export interface CredentialSummary {
   provider: AiProvider
   hint: string
+  /** 只有自架模型會有：使用者自訂的端點與模型名稱。 */
+  baseUrl: string | null
+  model: string | null
+}
+
+export interface CredentialCreate {
+  provider: AiProvider
+  apiKey: string
+  baseUrl?: string
+  model?: string
 }
 
 /**

@@ -14,6 +14,9 @@ export interface ResolvedCredential {
   provider: AiProvider
   apiKey: string
   source: CredentialSource
+  /** 自架模型的端點與模型名稱；沒有就用環境設定。 */
+  baseUrl?: string
+  model?: string
 }
 
 /**
@@ -40,7 +43,7 @@ export async function resolveCredential(
 ): Promise<ResolvedCredential | null> {
   if (userId) {
     const [row] = await useDb()
-      .select({ encrypted: schema.aiCredentials.encrypted })
+      .select({ encrypted: schema.aiCredentials.encrypted, baseUrl: schema.aiCredentials.baseUrl, model: schema.aiCredentials.model })
       .from(schema.aiCredentials)
       .where(and(
         eq(schema.aiCredentials.userId, userId),
@@ -49,7 +52,7 @@ export async function resolveCredential(
       .limit(1)
 
     if (row) {
-      return { provider, apiKey: unseal(row.encrypted as SealedSecret), source: 'own' }
+      return { provider, apiKey: unseal(row.encrypted as SealedSecret), source: 'own', baseUrl: row.baseUrl ?? undefined, model: row.model ?? undefined }
     }
   }
 
@@ -58,4 +61,24 @@ export async function resolveCredential(
 
   const apiKey = keys[poolCursor++ % keys.length]!
   return { provider, apiKey, source: 'pool' }
+}
+
+/**
+ * 讀者沒指定供應商時用這支：有自備金鑰就優先用自備的（多把時偏好環境預設的那家），
+ * 都沒有才用環境預設供應商的共用池。這樣使用者填了地端模型的金鑰，就會實際走地端模型。
+ */
+export async function resolveViewerCredential(userId: string | null): Promise<ResolvedCredential | null> {
+  const { ai } = useRuntimeConfig()
+  const defaultProvider: AiProvider = isAiProvider(ai.defaultProvider) ? ai.defaultProvider : 'anthropic'
+
+  if (userId) {
+    const rows = await useDb()
+      .select({ provider: schema.aiCredentials.provider })
+      .from(schema.aiCredentials)
+      .where(eq(schema.aiCredentials.userId, userId))
+    const owned = rows.map(row => row.provider).filter(isAiProvider)
+    const chosen = owned.includes(defaultProvider) ? defaultProvider : owned[0]
+    if (chosen) return resolveCredential(userId, chosen)
+  }
+  return resolveCredential(null, defaultProvider)
 }

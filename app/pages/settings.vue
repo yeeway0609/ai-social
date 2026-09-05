@@ -9,7 +9,15 @@ const { data: credentials, refresh: refreshCredentials } = await useAsyncData('m
 
 const provider = ref<AiProvider>('anthropic')
 const apiKey = ref('')
+const baseUrl = ref('')
+const model = ref('')
 const isSavingKey = ref(false)
+
+const isLocalProvider = computed(() => provider.value === 'local')
+const canSaveKey = computed(() => {
+  if (apiKey.value.trim().length < 8) return false
+  return !isLocalProvider.value || (baseUrl.value.trim().length > 0 && model.value.trim().length > 0)
+})
 
 const providerItems = AI_PROVIDERS.map(id => ({ label: AI_PROVIDER_LABELS[id], value: id }))
 
@@ -21,7 +29,12 @@ async function handleSaved() {
 async function handleSubmitKey() {
   isSavingKey.value = true
   try {
-    await $fetch('/api/me/credentials', { method: 'POST', body: { provider: provider.value, apiKey: apiKey.value.trim() } })
+    const body: CredentialCreate = { provider: provider.value, apiKey: apiKey.value.trim() }
+    if (isLocalProvider.value) {
+      body.baseUrl = baseUrl.value.trim()
+      body.model = model.value.trim()
+    }
+    await $fetch('/api/me/credentials', { method: 'POST', body })
     apiKey.value = ''
     credentialWarning.dismiss()
     await refreshCredentials()
@@ -74,7 +87,13 @@ async function handleClickDeleteKey(target: AiProvider) {
           :key="credential.provider"
           class="flex items-center justify-between rounded-lg border border-default px-3 py-2 text-sm"
         >
-          <span>{{ AI_PROVIDER_LABELS[credential.provider] }} <span class="font-mono text-muted">…{{ credential.hint }}</span></span>
+          <span class="min-w-0">
+            {{ AI_PROVIDER_LABELS[credential.provider] }} <span class="font-mono text-muted">…{{ credential.hint }}</span>
+            <span
+              v-if="credential.baseUrl"
+              class="block truncate text-xs text-muted"
+            >{{ credential.model }} @ {{ credential.baseUrl }}</span>
+          </span>
           <UButton
             color="neutral"
             variant="ghost"
@@ -95,6 +114,21 @@ async function handleClickDeleteKey(target: AiProvider) {
           orientation="horizontal"
           :items="providerItems"
         />
+        <template v-if="isLocalProvider">
+          <UInput
+            v-model="baseUrl"
+            class="w-full"
+            type="url"
+            autocomplete="off"
+            placeholder="API base URL，例如 http://192.168.5.245/ai/v1"
+          />
+          <UInput
+            v-model="model"
+            class="w-full"
+            autocomplete="off"
+            placeholder="模型／instance 名稱"
+          />
+        </template>
         <UInput
           v-model="apiKey"
           class="w-full"
@@ -105,7 +139,7 @@ async function handleClickDeleteKey(target: AiProvider) {
         <UButton
           type="submit"
           :loading="isSavingKey"
-          :disabled="apiKey.trim().length < 20"
+          :disabled="!canSaveKey"
           label="儲存金鑰"
         />
       </form>

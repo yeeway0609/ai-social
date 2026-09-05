@@ -3,7 +3,7 @@ import { and, eq } from 'drizzle-orm'
 import type { H3Event } from 'h3'
 import { schema, useDb } from '../../db'
 import { loadContent, type LoadedContent } from '../content'
-import { resolveCredential, type ResolvedCredential } from './credentials'
+import { resolveViewerCredential, type ResolvedCredential } from './credentials'
 import { buildSystemPrompt, wrapOriginal } from './prompt'
 import { classifyProviderError, modelFor, REWRITE_FNS } from './providers'
 import { measureRewriteScale } from './scale'
@@ -27,11 +27,6 @@ class GenerationFailure extends Error {
 
 function hashInstruction(customInstruction: string | null) {
   return customInstruction ? createHash('sha256').update(customInstruction).digest('hex') : ''
-}
-
-function currentProvider(): AiProvider {
-  const { ai } = useRuntimeConfig()
-  return isAiProvider(ai.defaultProvider) ? ai.defaultProvider : 'anthropic'
 }
 
 async function readCache(kind: ContentKind, contentId: string, tone: string, instructionHash: string) {
@@ -64,10 +59,11 @@ async function generate(content: LoadedContent, tone: Tone, customInstruction: s
   try {
     text = await REWRITE_FNS[credential.provider]({
       apiKey: credential.apiKey,
-      model: modelFor(credential.provider),
+      model: modelFor(credential.provider, credential.model),
       system: buildSystemPrompt(tone, customInstruction),
       original: wrapOriginal(content.originalText),
-      timeoutMs: RENDER_TIMEOUT_MS
+      timeoutMs: RENDER_TIMEOUT_MS,
+      baseUrl: credential.baseUrl
     })
   } catch (err) {
     throw new GenerationFailure(classifyProviderError(err) ?? 'provider_error')
@@ -98,8 +94,7 @@ export async function renderContent(kind: ContentKind, id: string, viewerId: str
   const tone = findTone(viewer?.tone ?? ORIGINAL_TONE)
   if (!tone || tone.id === ORIGINAL_TONE) return original()
 
-  const provider = currentProvider()
-  const credential = await resolveCredential(viewerId, provider)
+  const credential = await resolveViewerCredential(viewerId)
   // 自訂指示只在讀者有自備金鑰時生效；金鑰被刪後自動退回純預設語氣的共用快取
   const customInstruction = credential?.source === 'own' ? (viewer?.customInstruction ?? null) : null
   const instructionHash = hashInstruction(customInstruction)
@@ -128,7 +123,7 @@ export async function pregenerateRenditions(kind: ContentKind, id: string, autho
   const content = await loadContent(kind, id)
   if (!content) return { generated: 0, failed: 0 }
 
-  const credential = await resolveCredential(authorId, currentProvider())
+  const credential = await resolveViewerCredential(authorId)
   if (!credential) return { generated: 0, failed: 0 }
 
   const targets = TONES.filter(tone => tone.id !== ORIGINAL_TONE && (!toneIds || toneIds.includes(tone.id)))
