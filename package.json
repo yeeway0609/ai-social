@@ -1,7 +1,7 @@
 {
   "name": "ai-social",
   "private": true,
-  "license": "UNLICENSED",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "nuxt dev",

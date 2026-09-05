@@ -57,6 +57,16 @@ export const messages = pgTable('messages', {
 }, table => [index('messages_conversation_idx').on(table.conversationId, table.createdAt, table.id)])
 
 /**
+ * 每人在每個對話讀到哪裡；沒有列代表從沒開過，對方所有訊息都算未讀。
+ * 只記錄讀者自己的進度，不回報給對方，所以沒有「對方已讀」。
+ */
+export const conversationReads = pgTable('conversation_reads', {
+  conversationId: uuid('conversation_id').notNull().references(() => conversations.id, { onDelete: 'cascade' }),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  lastReadAt: timestamp('last_read_at', { withTimezone: true }).notNull().defaultNow()
+}, table => [primaryKey({ columns: [table.conversationId, table.userId] })])
+
+/**
  * 每則內容在每個語氣下的改寫，寫入時預產、讀取時直接撈；同語氣所有讀者看到同一份。
  * 內容被刪時改寫沒有外鍵可 cascade（kind 不同表），由刪除端點順手清。
  */

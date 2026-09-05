@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { getConversationForViewer, listMessages } from '../../../utils/conversations'
+import { getConversationForViewer, listMessages, markConversationRead } from '../../../utils/conversations'
 import { requireUserId } from '../../../utils/session'
 
 const params = z.object({ id: z.uuid() })
@@ -11,5 +11,7 @@ export default defineEventHandler(async (event): Promise<MessageSummary[]> => {
   const { after } = query.parse(getQuery(event))
   const conversation = await getConversationForViewer(id, viewerId)
   if (!conversation) throw createError({ statusCode: 404, statusMessage: 'conversation_not_found' })
-  return listMessages(id, viewerId, after)
+  // 對話頁開著才會來拉（含輪詢），拉到哪就讀到哪；不另開端點讓前端多打一次
+  const [messages] = await Promise.all([listMessages(id, viewerId, after), markConversationRead(id, viewerId)])
+  return messages
 })
