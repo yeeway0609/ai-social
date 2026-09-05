@@ -120,7 +120,7 @@ async function handleClickDeleteKey(target: AiProvider) {
             class="w-full"
             type="url"
             autocomplete="off"
-            placeholder="API base URL，例如 http://192.168.5.245/ai/v1"
+            placeholder="API base URL，例如 https://your-gateway.example.com/v1"
           />
           <UInput
             v-model="model"
