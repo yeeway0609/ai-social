@@ -1,9 +1,28 @@
 <script setup lang="ts">
+import type { CredentialWarningKind } from '~/composables/useCredentialWarning'
+
 /**
  * 一則內容（貼文／留言／訊息）的正文區，負責整個語氣層的讀者端行為：
  * 自己的內容直接顯示原文；他人的內容進入可視範圍前排隊改寫、完成前顯示骨架；
  * 標籤標示「AI 改寫」或「原文」；「顯示原文」一次性切回、不呼叫模型。
  */
+const RENDITION_ERROR_LABELS: Record<RenditionError, string> = {
+  no_ai_credential: '沒有可用金鑰',
+  provider_authentication_failed: '金鑰驗證失敗',
+  provider_rate_limited: '供應商額度受限',
+  provider_error: '供應商回應失敗',
+  timeout: '供應商回應逾時',
+  invalid_model_output: '模型輸出格式錯誤',
+  token_changed: '登入狀態已更新',
+  output_too_long: '模型輸出過長'
+}
+
+const CREDENTIAL_WARNING_KIND_BY_ERROR: Partial<Record<RenditionError, CredentialWarningKind>> = {
+  no_ai_credential: 'missing',
+  provider_authentication_failed: 'authenticationFailed',
+  provider_rate_limited: 'rateLimited'
+}
+
 const props = withDefaults(defineProps<{
   kind: ContentKind
   content: ContentSummary
@@ -34,6 +53,10 @@ const isLoading = computed(() => displayText.value === null)
 const canReveal = computed(() => !props.content.isOwn && rendition.value && !rendition.value.isOriginal)
 const canRetry = computed(() => !props.content.isOwn && !isLoading.value && !!rendition.value?.error)
 const scaleLabel = computed(() => rendition.value?.scale ? REWRITE_SCALE_LABELS[rendition.value.scale] : null)
+const renditionErrorLabel = computed(() => {
+  const error = rendition.value?.error
+  return error ? RENDITION_ERROR_LABELS[error] : null
+})
 const semanticSimilarityLabel = computed(() => {
   const semanticSimilarity = rendition.value?.semanticSimilarity
   if (!rendition.value || rendition.value.isOriginal || !semanticSimilarity) return null
@@ -56,7 +79,8 @@ async function loadRendition(currentEpoch: number, refresh = false) {
     if (result.isOriginal) originalText.value = result.text
     if (result.error) {
       emit('renderFailed', result.error)
-      if (result.error === 'no_ai_credential') credentialWarning.show()
+      const warningKind = CREDENTIAL_WARNING_KIND_BY_ERROR[result.error]
+      if (warningKind) credentialWarning.show(warningKind)
     }
   } catch {
     emit('renderFailed', 'provider_error')
@@ -147,6 +171,15 @@ async function handleClickReveal() {
           </template>
         </UBadge>
       </Transition>
+      <UBadge
+        v-if="renditionErrorLabel"
+        color="warning"
+        variant="subtle"
+        size="sm"
+        icon="i-mingcute-warning-line"
+      >
+        未改寫：{{ renditionErrorLabel }}
+      </UBadge>
       <UButton
         v-if="canReveal"
         color="neutral"

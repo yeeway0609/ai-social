@@ -1,6 +1,6 @@
 # AI 語氣改寫 MVP 開發路徑
 
-本文件依目前 AI Social 程式碼與使用者於 2026 年 9 月 5 日確認的方向整理。本文是規劃文件，不代表功能已實作。作業期間新增的 AI_STYLE_ENGINE_ONE_DAY_MVP.md 與 AI_STYLE_ENGINE_MVP_IMPLEMENTATION_PLAYBOOK.md 尚未納入本次交叉核對。
+本文件依目前 AI Social 程式碼與使用者於 2026 年 9 月 5 日確認的方向整理。本文保留開發路徑與驗收狀態；已實作項目以「目前實作進度」標示，尚未驗收項目仍明列。
 
 ## 已確認的方向
 
@@ -8,7 +8,7 @@
 - 支援 `anthropic` 與 `openai`，沿用既有供應商轉接與金鑰解析。
 - 使用者自備金鑰優先，沒有自備金鑰時使用團隊共用池。
 - 需要生成但沒有可用金鑰時，顯示原文，並提示「未設定金鑰」、引導設定。
-- 已確立的固定語氣，例如客觀中立、溫柔，改寫結果寫入資料庫，供使用者直接讀取。固定語氣清單與識別碼以同伴完成的共用定義為準，不沿用舊計畫固定限定的三個值。
+- 固定語氣清單定案為 `gentle_friendly`、`objective_neutral`、`clear_concise` 三種；有效改寫結果寫入資料庫，供同語氣讀者重用。
 - 自訂語氣結果不寫入平台資料庫，只暫存在用戶端；後端僅在請求處理期間持有生成內容。
 - 原文不列為語氣選項，仍作為改寫失敗的顯示內容及查看原文的來源。使用者回報同伴已修改選項，整合時再核對最新程式。
 - 規劃改寫幅度計算並顯示於前端，供使用者參考。
@@ -57,11 +57,11 @@
 
 1. 固定語氣已在內容寫入後預產，讀取缺少快取時惰性生成，結果存於 `renditions`；不必重新建立相同功能。
 2. 自訂指示以 `instructionHash` 區分，現有 `renderContent()` 仍會呼叫 `writeCache()` 入庫，與「自訂結果只留用戶端」不同，後續須調整。
-3. `server/utils/ai/scale.ts` 目前使用字元 bigram Dice 係數與三級 `RewriteScale`，尚未採已選定的 embedding 語意相似度；資料欄位與前端呈現均需銜接。
-4. 遠端已新增 `openrouter`、`local`，供應商值域不再只有兩家；後續不應直接覆寫同伴新增能力。既有 `resolveCredential()` 的整合入口已演進為 `resolveViewerCredential()`，須以新程式核對後再接線。
+3. `server/utils/ai/scale.ts` 的三級 `RewriteScale` 仍保留為改寫幅度標籤；語意相似度已改用 embedding cosine similarity，欄位與前端呈現已銜接。
+4. 供應商值域目前為 `anthropic`、`openai`、`openrouter`、`local`；生成流程沿用既有供應商轉接與錯誤分類，不再另建平行 provider 設定。
 5. 固定語氣共用定義已位於 `shared/utils/tones.ts`，值域為 `gentle_friendly`、`objective_neutral`、`clear_concise`；沒有原文選項。自訂指示上限為 300，現行引擎只在自備金鑰存在時套用，需在契約銜接時明確處理。
 6. 單筆 ID、讀者設定取語氣的既有契約，與計畫批次及瀏覽器提交語氣的描述不同；步驟 2 應先沿用現有邊界再規劃必要擴充。
-7. 已確認 `no_ai_credential` → `ContentBody.vue` 顯示原文並呼叫 `useCredentialWarning().show()` → `layouts/default.vue` 顯示前往設定入口。現行提示為「共用額度用完了，目前顯示原文」，與已確認的「未設定金鑰」不符，不能把缺少設定當作額度耗盡。設定成功會清除提示；重試與瀏覽器流程仍待端到端驗收，本次不關閉 GitHub issue。
+7. `ContentBody.vue` 會把生成錯誤碼顯示成未改寫原因；缺金鑰、金鑰驗證失敗與額度受限會觸發對應的全域金鑰提示。設定成功、重試與真實瀏覽器流程仍待端到端驗收。
 8. `GET /api/me` 會拒絕已刪除帳號，但 `GET /api/posts` 等只經 `requireUserId()` 的 API 沒有同等檢查；前端登入導向不能取代後端檢查。
 9. 前端改寫佇列同時最多 3 個單筆請求，貼文長度上限為 `MAX_TEXT_LENGTH = 500`；與批次上限是不同維度，契約整合不可混用。
 10. `ContentBody.vue` 在請求直接失敗時顯示「（載入失敗）」並標為原文，沒有取得真正原文；與服務端正常回傳失敗結果的原文回退是不同路徑，後續錯誤處理需補驗收。
@@ -77,12 +77,12 @@
 - 單批 1–6 筆，按 `kind` 與小寫 UUID 組合去重。原文從資料庫取得，非空且最多 500 個 UTF-16 code unit，與現有 Zod `.max()` 一致；自訂指示沿用最多 300 的現有設定。
 - 共用純驗證位於 `shared/utils/renderContract.ts`。後續新增 HTTP 端點仍須以 Zod 驗證 body；有效登入、可讀權限與不存在內容在模型呼叫前處理。
 - 結果維持請求順序並沿用 `text`、`isOriginal`、`error` 表達結果。生成失敗回應帶正式原文，不改成 `text: null`，因 Feed 不一定持有他人原文。
-- 新的生成驗證與供應商錯誤代碼已在批次型別保留，並於步驟 5 接上單筆生成流程；前端尚未針對新錯誤碼做不同文案。
+- 新的生成驗證與供應商錯誤代碼已接上單筆與批次生成流程；前端會顯示對應未改寫原因。
 - `semanticSimilarity` 使用共享 `SemanticSimilarityResult`；成功包含原始分數、模型、算法版本，評估失敗與生成失敗分離，舊結果或未評估使用 `null`。
 - 沿用現有四種供應商與 `RewriteFn` 全部參數，正式原文 `originalText` 映射至 `original`，不建立另一套 `style`／`styleKey` 命名。
 - 批次由服務端逐篇協調並組合 JSON，並非模型原生 Structured Outputs。原生輸出需求保留於後續能力核對，不宣稱本步已完成。
 
-契約、embedding 與輸出驗證共 18 組離線測試通過，另有 1 組供應商 SDK 分類測試因本機尚未安裝依賴而跳過；未呼叫真實模型。完整專案 lint／typecheck／build 仍受依賴安裝與網路限制影響，尚未驗證。
+契約、embedding 與輸出驗證已有離線測試；未呼叫真實模型。2026 年 9 月 5 日重新安裝依賴時被 pnpm 最低發布時間政策阻擋，完整本機 lint／typecheck／build 仍需在依賴安裝完成後重跑。
 
 ### 3. 沿用依賴與 Nuxt 環境變數
 
@@ -91,7 +91,6 @@
 ```dotenv
 DATABASE_URL=
 NUXT_SESSION_SECRET=
-NUXT_CREDENTIAL_SECRET=
 NUXT_PUBLIC_ENVIRONMENT=local
 NUXT_AI_DEFAULT_PROVIDER=anthropic
 NUXT_AI_POOL_ANTHROPIC=
@@ -100,11 +99,11 @@ NUXT_AI_MODEL_ANTHROPIC=claude-haiku-4-5-20251001
 NUXT_AI_MODEL_OPENAI=gpt-5-mini
 ```
 
-模型名稱以最新 `nuxt.config.ts`／部署設定為準。共用池為逗號分隔的金鑰清單，自備金鑰沿用加密儲存與解析。不得任意更換既有 `NUXT_CREDENTIAL_SECRET`，以免已存金鑰無法解密。
+模型名稱以最新 `nuxt.config.ts`／部署設定為準。共用池為逗號分隔的金鑰清單；自備金鑰只存在使用者瀏覽器，每次請求以標頭送入伺服器，用完即丟。
 
 不新增平行的 `OPENAI_API_KEY`、`OPENAI_MODEL` 設定。金鑰不得放入 `runtimeConfig.public`、瀏覽器或 Git。
 
-已核對 2026 年 9 月 5 日工作樹：`package.json` 已使用 `pnpm`，`openai` 與 `zod` 已存在；`.env.example` 與 `nuxt.config.ts` 已沿用 `NUXT_AI_*`，且保留 `anthropic`、`openai`、`openrouter`、`local` 四種供應商設定。本步未新增依賴、未新增 `OPENAI_API_KEY` 或 `OPENAI_MODEL`。
+已核對 2026 年 9 月 5 日工作樹：`package.json` 已使用 `pnpm`，`openai` 與 `zod` 已存在；`.env.example` 與 `nuxt.config.ts` 已沿用 `NUXT_AI_*`，且保留 `anthropic`、`openai`、`openrouter`、`local` 四種供應商設定。本步未新增 `OPENAI_API_KEY` 或 `OPENAI_MODEL`。
 
 ### 4. 擴充既有 AI 目錄
 
@@ -142,7 +141,7 @@ NUXT_AI_MODEL_OPENAI=gpt-5-mini
 
 ### 7. 改寫幅度計算與前端顯示
 
-目前實作進度：已新增獨立計算模組 `server/utils/ai/semanticSimilarity.ts`，使用 OpenAI embedding HTTP API，預設 `text-embedding-3-small`，可由呼叫端指定模型。生成流程已在輸出驗證通過後呼叫 embedding 評估；評估失敗不使改寫失敗。`RenditionResult` 已增加 `semanticSimilarity`，前端 `ContentBody.vue` 已顯示分數或暫不可用。`renditions` schema 已增加語意相似度欄位，但尚未產生或套用資料庫 migration；舊資料會回傳 `semanticSimilarity: null`。尚未以真實金鑰驗收或校準繁體中文。
+目前實作進度：已新增獨立計算模組 `server/utils/ai/semanticSimilarity.ts`，使用 OpenAI embedding HTTP API，預設 `text-embedding-3-small`，可由呼叫端指定模型。生成流程已在輸出驗證通過後呼叫 embedding 評估；評估失敗不使改寫失敗。`RenditionResult` 已增加 `semanticSimilarity`，前端 `ContentBody.vue` 已顯示分數或暫不可用。`renditions` schema 已增加語意相似度欄位，且已產生 migration；真實資料庫尚未套用，舊資料會回傳 `semanticSimilarity: null`。尚未以真實金鑰驗收或校準繁體中文。
 
 
 已選擇方案 4：語意向量相似度。以同一 embedding 模型將正式原文與改寫結果轉為向量，再計算 cosine similarity，作為語意接近程度的參考。
@@ -161,7 +160,7 @@ similarity = dot(originalEmbedding, renditionEmbedding)
 - 建議評估逾時或失敗時保留已通過輸出驗證的改寫，分數為空並顯示「語意相似度暫不可用」，不捏造分數；此降級行為待實作契約確認。
 - 以繁體中文人工標註案例校準：相同文字、同義改述、純語氣調整、否定翻轉、數字改動、刪除重要資訊及無關內容。已補本地校準樣本與排序測試；尚未用真實 embedding 金鑰跑實測前，不設定通用高低門檻，也不使用分數作為唯一放行依據。
 - 驗證空文字、零向量、非有限值與維度不一致；無效輸出不進入評估。更換 embedding 模型或前處理版本後，不直接混用舊分數。
-- 方法參考：[Sentence Transformers 語意相似度說明](https://www.sbert.net/docs/sentence_transformer/usage/semantic_textual_similarity.html)。本次只確認方案，不安裝依賴、不呼叫 embedding API、不修改功能程式碼。
+- 方法參考：[Sentence Transformers 語意相似度說明](https://www.sbert.net/docs/sentence_transformer/usage/semantic_textual_similarity.html)。目前已完成本地實作與離線樣本；尚未呼叫真實 embedding API。
 
 ### 8. API 與前端整合
 
@@ -176,7 +175,7 @@ similarity = dot(originalEmbedding, renditionEmbedding)
 5. 前端呈現語氣選擇、自訂輸入、Loading、查看原文、改寫幅度與語意相似度；不把原文列為語氣選項。
 6. 無金鑰時顯示原文與設定引導，設定完成可由使用者重試；避免持續自動重試。
 
-尚未完成：真實瀏覽器與資料庫端到端驗收、資料庫 migration 產生與套用。基本 rate limit 已以每個 serverless 實例的記憶體視窗先接上，之後若需要跨實例精準限制再換成資料庫或外部儲存。
+尚未完成：真實瀏覽器與資料庫端到端驗收、真實資料庫 migration 套用。基本 rate limit 已以每個 serverless 實例的記憶體視窗先接上，之後若需要跨實例精準限制再換成資料庫或外部儲存。
 
 ### 9. 檢查與驗收
 
@@ -213,5 +212,5 @@ similarity = dot(originalEmbedding, renditionEmbedding)
 
 - 登入限制：[GitHub issue #1](https://github.com/yeeway0609/ai-social/issues/1)。
 - 無金鑰原文回退與設定提示：[GitHub issue #2](https://github.com/yeeway0609/ai-social/issues/2)。
-- `backlog` CLI 在本機不可用，本次未建立或直接修改 Backlog 任務檔。
-- 本次只更新計畫與回報 issue，不實作上述功能。
+- `backlog` CLI 可透過 Codex runtime 的 Node 路徑搭配 `pnpm dlx backlog.md` 執行；一般 shell 仍未設定全域 `backlog` 指令。
+- 2026 年 9 月 5 日已補 decision-017 與 decision-018，同步預設語氣與語意相似度持久化決策。

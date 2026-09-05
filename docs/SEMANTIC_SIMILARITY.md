@@ -28,6 +28,6 @@ node --test tests/semanticSimilarity.test.mjs
 
 目前已完成計算模組並接上生成流程。有效改寫會在輸出驗證通過後評估；評估失敗不讓改寫失敗，而是回傳 `semanticSimilarity: { status: 'unavailable', score: null, error }`。預設語氣的結果會把分數／模型／版本或評估錯誤寫入 `renditions`，自訂結果與分數只回傳給用戶端暫存。已建立本地繁體中文校準樣本與排序測試，真實 embedding 金鑰實測仍未完成，不可把舊 `scale` 字串直接當成 embedding 分數。
 
-驗證紀錄：繁中校準樣本涵蓋相同文字、同義改述、純語氣調整、否定翻轉、數字改動、刪除重要資訊及無關內容；離線測試使用人工向量驗證排序，不耗用真實金鑰。依賴安裝被 pnpm 最低發布時間政策阻擋，完整 lint／typecheck／build 尚未完成。
+驗證紀錄：繁中校準樣本涵蓋相同文字、同義改述、純語氣調整、否定翻轉、數字改動、刪除重要資訊及無關內容；離線測試使用人工向量驗證排序，不耗用真實金鑰。2026 年 9 月 5 日重新下載依賴時仍被 pnpm 最低發布時間政策阻擋，`node_modules/.bin` 未建立，因此本機完整 lint／typecheck／build 尚未完成。
 
 API 參考：[OpenAI Embeddings](https://developers.openai.com/api/reference/resources/embeddings/methods/create)、[模型說明](https://developers.openai.com/api/docs/models/text-embedding-3-small)。

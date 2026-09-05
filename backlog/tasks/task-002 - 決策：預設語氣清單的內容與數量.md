@@ -1,10 +1,11 @@
 ---
 id: TASK-002
 title: 決策：預設語氣清單的內容與數量
-status: To Do
-assignee: []
+status: Done
+assignee:
+  - '@codex'
 created_date: '2026-09-04 18:10'
-updated_date: '2026-09-05 03:52'
+updated_date: '2026-09-05 07:59'
 labels:
   - spec
   - backend
@@ -26,6 +27,28 @@ ordinal: 2000
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 清單、每個語氣的名稱與一句描述定案，寫進語氣改寫引擎 PRD 的語氣設定章節
-- [ ] #2 沒有「不改寫」選項，讀者一定選一種會呼叫模型的語氣（見 decision-015）
+- [x] #1 清單、每個語氣的名稱與一句描述定案，寫進語氣改寫引擎 PRD 的語氣設定章節
+- [x] #2 沒有「不改寫」選項，讀者一定選一種會呼叫模型的語氣（見 decision-015）
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. 將預設語氣清單定案為 gentle_friendly、objective_neutral、clear_concise 三種。
+2. 更新語氣改寫引擎 PRD 的語氣設定章節，移除舊的五種候選描述。
+3. 補上決策紀錄，說明 demo 與快取成本考量下改採三種中性可控語氣。
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+使用者已拍板三個預設語氣：gentle and friendly、objective and neutral、clear and concise。
+
+驗證：doc-002 的語氣設定章節列出 gentle_friendly、objective_neutral、clear_concise 三種；decision-015 維持沒有不改寫選項，decision-017 記錄三種語氣定案。
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+預設語氣已定案為三種中性可控選項，並同步至語氣改寫引擎 PRD 與 accepted decision；沒有不改寫選項的設計由既有 decision-015 與本次 decision-017 共同支撐。
+<!-- SECTION:FINAL_SUMMARY:END -->
