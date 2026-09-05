@@ -1,5 +1,5 @@
 ---
-id: decision-023
+id: decision-024
 title: 聊天列表顯示未讀數量，以讀者自己的閱讀時間計算，不做對方已讀回條
 date: '2026-09-06 01:20'
 status: accepted
