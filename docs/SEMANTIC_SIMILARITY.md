@@ -6,7 +6,7 @@
 
 呼叫端提供 `originalText`、`rewrittenText` 與 `apiKey`，可指定 `model`、`timeoutMs`、`embeddingsUrl`（任何 OpenAI 相容的 embeddings 端點）與 `extraBody`（端點專屬參數）。預設端點為 OpenAI 官方、模型 `text-embedding-3-small`，預設逾時為 5000 毫秒，不自動重試。
 
-目前的整合走 NVIDIA NIM：端點 `https://integrate.api.nvidia.com/v1/embeddings`、模型由 `NUXT_AI_EMBEDDING_MODEL` 決定（預設 `nvidia/llama-3.2-nv-embedqa-1b-v2`）、金鑰與改寫模型共用 `NUXT_AI_NVIDIA_API_KEY`，並帶 `input_type: passage`。評估只在寫入時預產改寫的流程裡發生，讀取路徑不重算。模組不自行查詢資料庫或金鑰。
+目前的整合走 NVIDIA NIM：端點 `https://integrate.api.nvidia.com/v1/embeddings`、模型由 `NUXT_AI_EMBEDDING_MODEL` 決定（預設 `nvidia/nemotron-3-embed-1b`）、金鑰與改寫模型共用 `NUXT_AI_NVIDIA_API_KEY`，並帶 `input_type: passage`。評估只在寫入時預產改寫的流程裡發生，讀取路徑不重算。模組不自行查詢資料庫或金鑰。
 
 ## 結果
 

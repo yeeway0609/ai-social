@@ -38,7 +38,7 @@ export default defineNuxtConfig({
     ai: {
       nvidiaApiKey: '',
       model: 'nvidia/nemotron-3.5-lightning-30b-a3b',
-      embeddingModel: 'nvidia/llama-3.2-nv-embedqa-1b-v2',
+      embeddingModel: 'nvidia/nemotron-3-embed-1b',
       temperature: 1,
       // 沒有金鑰時的本機替身：改寫只是在原文前加語氣標記，讓 UI 流程走得通
       mock: false

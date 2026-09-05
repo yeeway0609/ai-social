@@ -7,7 +7,7 @@ import { requireUserId } from '../../utils/session'
 const params = z.object({ id: z.uuid() })
 
 export default defineEventHandler(async (event) => {
-  const viewerId = requireUserId(event)
+  const viewerId = await requireUserId(event)
   const { id } = params.parse(getRouterParams(event))
   const deleted = await useDb()
     .delete(schema.comments)

@@ -7,7 +7,7 @@ import { requireUserId } from '../../../utils/session'
 const params = z.object({ userId: z.uuid() })
 
 export default defineEventHandler(async (event): Promise<{ conversationId: string }> => {
-  const viewerId = requireUserId(event)
+  const viewerId = await requireUserId(event)
   const { userId: otherId } = params.parse(getRouterParams(event))
   if (otherId === viewerId) throw createError({ statusCode: 400, statusMessage: 'cannot_chat_with_self' })
 

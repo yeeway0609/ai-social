@@ -9,7 +9,7 @@ const params = z.object({ id: z.uuid() })
 const body = z.object({ text: z.string().trim().min(1).max(MAX_TEXT_LENGTH) })
 
 export default defineEventHandler(async (event): Promise<MessageSummary> => {
-  const viewerId = requireUserId(event)
+  const viewerId = await requireUserId(event)
   const { id } = params.parse(getRouterParams(event))
   const { text } = body.parse(await readBody(event))
   const conversation = await getConversationForViewer(id, viewerId)

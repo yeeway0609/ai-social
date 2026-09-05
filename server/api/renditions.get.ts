@@ -10,7 +10,7 @@ const query = z.object({
 
 /** 列表回來時改寫還在預產中，前端用這支輪詢；只查資料庫，永遠不碰模型。 */
 export default defineEventHandler(async (event): Promise<RenditionLookup> => {
-  const viewerId = requireUserId(event)
+  const viewerId = await requireUserId(event)
   const { kind, id } = query.parse(getQuery(event))
   if (!(await canView(kind, id, viewerId))) throw createError({ statusCode: 404, statusMessage: 'content_not_found' })
   const content = await loadContent(kind, id)

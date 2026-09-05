@@ -1,5 +1,7 @@
 import { createHmac, timingSafeEqual } from 'node:crypto'
+import { eq } from 'drizzle-orm'
 import type { H3Event } from 'h3'
+import { schema, useDb } from '../db'
 
 const COOKIE = 'ai-social-session'
 
@@ -38,9 +40,17 @@ export function getUserId(event: H3Event): string | null {
   return userId
 }
 
-/** 未登入不能用 App，所有需要登入的端點都從這裡拿 userId。 */
-export function requireUserId(event: H3Event): string {
+/**
+ * 未登入不能用 App，所有需要登入的端點都從這裡拿 userId。
+ * cookie 簽章有效不代表帳號還在（demo 帳號會被清掉重建），所以每個請求查一次使用者存在；
+ * 結果放在 event.context，同一請求多次呼叫只查一次。
+ */
+export async function requireUserId(event: H3Event): Promise<string> {
+  if (typeof event.context.userId === 'string') return event.context.userId
   const userId = getUserId(event)
   if (!userId) throw createError({ statusCode: 401, statusMessage: 'unauthenticated' })
+  const [user] = await useDb().select({ id: schema.users.id }).from(schema.users).where(eq(schema.users.id, userId)).limit(1)
+  if (!user) throw createError({ statusCode: 401, statusMessage: 'unauthenticated' })
+  event.context.userId = userId
   return userId
 }

@@ -6,7 +6,7 @@ const params = z.object({ id: z.uuid() })
 const query = z.object({ after: z.uuid().optional() })
 
 export default defineEventHandler(async (event): Promise<MessageSummary[]> => {
-  const viewerId = requireUserId(event)
+  const viewerId = await requireUserId(event)
   const { id } = params.parse(getRouterParams(event))
   const { after } = query.parse(getQuery(event))
   const conversation = await getConversationForViewer(id, viewerId)

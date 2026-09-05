@@ -8,7 +8,7 @@ const body = z.object({ text: z.string().trim().min(1).max(MAX_TEXT_LENGTH) })
 
 /** 送出即發布：存的就是輸入框的字，沒有任何 AI 介入。 */
 export default defineEventHandler(async (event): Promise<PostSummary> => {
-  const authorId = requireUserId(event)
+  const authorId = await requireUserId(event)
   const { text } = body.parse(await readBody(event))
   const [post] = await useDb()
     .insert(schema.posts)

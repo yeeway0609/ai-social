@@ -7,7 +7,7 @@ const params = z.object({ id: z.uuid() })
 
 /** 切換讚：有就收回、沒有就加；複合主鍵擋掉重複點擊造成的重複累加。 */
 export default defineEventHandler(async (event): Promise<LikeResult> => {
-  const userId = requireUserId(event)
+  const userId = await requireUserId(event)
   const { id: postId } = params.parse(getRouterParams(event))
   const db = useDb()
 
