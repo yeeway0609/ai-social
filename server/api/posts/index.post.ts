@@ -15,7 +15,7 @@ export default defineEventHandler(async (event): Promise<PostSummary> => {
     .values({ authorId, originalText: text })
     .returning({ id: schema.posts.id })
   // 預產所有預設語氣的改寫在背景跑，發文本身不等它
-  schedulePregeneration(event, 'post', post!.id, authorId)
+  schedulePregeneration(event, 'post', post!.id)
   setResponseStatus(event, 201)
   return (await getPost(post!.id, authorId))!
 })

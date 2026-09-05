@@ -3,7 +3,7 @@ import { and, eq } from 'drizzle-orm'
 import type { H3Event } from 'h3'
 import { schema, useDb } from '../../db'
 import { loadContent, type LoadedContent } from '../content'
-import { resolveViewerCredential, type ResolvedCredential } from './credentials'
+import { readOwnCredential, resolveCredential, type ResolvedCredential } from './credentials'
 import { buildSystemPrompt, wrapOriginal } from './prompt'
 import { classifyProviderError, modelFor, REWRITE_FNS } from './providers'
 import { measureRewriteScale } from './scale'
@@ -76,7 +76,7 @@ async function generate(content: LoadedContent, tone: Tone, customInstruction: s
  * 預設語氣先查快取，沒有才生成並存回；自訂指示必須有自備金鑰，其結果以指示雜湊另存。
  * 失敗一律退回原文並帶錯誤碼，不丟例外——feed 上任何一則都不能因為模型出問題而變空白。
  */
-export async function renderContent(kind: ContentKind, id: string, viewerId: string): Promise<RenditionResult> {
+export async function renderContent(kind: ContentKind, id: string, viewerId: string, ownCredential: ResolvedCredential | null): Promise<RenditionResult> {
   const content = await loadContent(kind, id)
   if (!content) throw new ContentNotFoundError()
 
@@ -94,8 +94,8 @@ export async function renderContent(kind: ContentKind, id: string, viewerId: str
   const tone = viewer?.tone ? findTone(viewer.tone) : undefined
   if (!tone) return original()
 
-  const credential = await resolveViewerCredential(viewerId)
-  // 自訂指示只在讀者有自備金鑰時生效；金鑰被刪後自動退回純預設語氣的共用快取
+  const credential = resolveCredential(ownCredential)
+  // 自訂指示只在這次請求帶了自備金鑰時生效；沒帶就退回純預設語氣的共用快取
   const customInstruction = credential?.source === 'own' ? (viewer?.customInstruction ?? null) : null
   const instructionHash = hashInstruction(customInstruction)
 
@@ -116,14 +116,14 @@ export async function renderContent(kind: ContentKind, id: string, viewerId: str
 
 /**
  * 內容寫入時預先產出所有預設語氣的改寫，讀者捲到時直接命中快取。
- * 燒的是 credentialUserId 這位使用者的自備金鑰、其次共用池；寫入端點傳作者，管理工具可指定他人。
+ * 燒的是請求帶來的自備金鑰（作者瀏覽器裡的那把）、其次共用池。
  * 任何一個語氣失敗就略過，讀者端會惰性補生成。訊息只需要收件人當下的語氣，傳 toneIds 限制範圍。
  */
-export async function pregenerateRenditions(kind: ContentKind, id: string, credentialUserId: string, toneIds?: string[]) {
+export async function pregenerateRenditions(kind: ContentKind, id: string, ownCredential: ResolvedCredential | null, toneIds?: string[]) {
   const content = await loadContent(kind, id)
   if (!content) return { generated: 0, failed: 0 }
 
-  const credential = await resolveViewerCredential(credentialUserId)
+  const credential = resolveCredential(ownCredential)
   if (!credential) return { generated: 0, failed: 0 }
 
   const targets = TONES.filter(tone => !toneIds || toneIds.includes(tone.id))
@@ -142,8 +142,8 @@ export async function pregenerateRenditions(kind: ContentKind, id: string, crede
 }
 
 /** 寫入端點用：回應先送出，預產在背景跑；平台不支援 waitUntil 時退回同步等待。 */
-export function schedulePregeneration(event: H3Event, kind: ContentKind, id: string, authorId: string, toneIds?: string[]) {
-  const work = pregenerateRenditions(kind, id, authorId, toneIds).catch(() => undefined)
+export function schedulePregeneration(event: H3Event, kind: ContentKind, id: string, toneIds?: string[]) {
+  const work = pregenerateRenditions(kind, id, readOwnCredential(event), toneIds).catch(() => undefined)
   if (typeof event.waitUntil === 'function') event.waitUntil(work)
   return work
 }

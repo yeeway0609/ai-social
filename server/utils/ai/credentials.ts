@@ -1,19 +1,23 @@
-import { and, eq } from 'drizzle-orm'
-import { schema, useDb } from '../../db'
-import { unseal, type SealedSecret } from '../crypto'
-
-/** 池與自備金鑰都沒有時丟這個，讓呼叫端把使用者導去 onboarding 設定自己的金鑰。 */
-export class NoCredentialError extends Error {
-  readonly code = 'no_ai_credential'
-  constructor(readonly provider: AiProvider) {
-    super(`${provider} 沒有可用的金鑰`)
-  }
-}
+import type { H3Event } from 'h3'
 
 export interface ResolvedCredential {
   provider: AiProvider
   apiKey: string
   source: CredentialSource
+}
+
+const PROVIDER_HEADER = 'x-ai-provider'
+const KEY_HEADER = 'x-ai-key'
+
+/**
+ * 使用者自備金鑰只存在他自己的瀏覽器，每次請求用標頭帶上來、用完即丟。
+ * 伺服器不寫入資料庫、不寫 log，所以平台方拿不到、也無法代替使用者使用。
+ */
+export function readOwnCredential(event: H3Event): ResolvedCredential | null {
+  const provider = getHeader(event, PROVIDER_HEADER)
+  const apiKey = getHeader(event, KEY_HEADER)?.trim()
+  if (!isAiProvider(provider) || !apiKey) return null
+  return { provider, apiKey, source: 'own' }
 }
 
 /**
@@ -28,54 +32,19 @@ function pool(provider: AiProvider): string[] {
   return raw.split(',').map(k => k.trim()).filter(Boolean)
 }
 
-/**
- * 決定這次改寫要燒誰的額度：使用者自備優先，其次才動用團隊共用池。
- *
- * 兩條路都是常態路徑——demo 現場共用池會被玩爆，耗盡後自備金鑰是唯一續命方式，
- * 所以池空不是系統錯誤，要讓呼叫端有機會把使用者導去 onboarding 設定自己的金鑰。
- */
-export async function resolveCredential(
-  userId: string | null,
-  provider: AiProvider
-): Promise<ResolvedCredential | null> {
-  if (userId) {
-    const [row] = await useDb()
-      .select({ encrypted: schema.aiCredentials.encrypted })
-      .from(schema.aiCredentials)
-      .where(and(
-        eq(schema.aiCredentials.userId, userId),
-        eq(schema.aiCredentials.provider, provider)
-      ))
-      .limit(1)
-
-    if (row) {
-      return { provider, apiKey: unseal(row.encrypted as SealedSecret), source: 'own' }
-    }
-  }
-
-  const keys = pool(provider)
-  if (keys.length === 0) return null
-
-  const apiKey = keys[poolCursor++ % keys.length]!
-  return { provider, apiKey, source: 'pool' }
+export function defaultProvider(): AiProvider {
+  const { ai } = useRuntimeConfig()
+  return isAiProvider(ai.defaultProvider) ? ai.defaultProvider : 'anthropic'
 }
 
 /**
- * 讀者沒指定供應商時用這支：有自備金鑰就優先用自備的（多把時偏好環境預設的那家），
- * 都沒有才用環境預設供應商的共用池。這樣使用者填了哪家的金鑰，改寫就實際走那家。
+ * 決定這次改寫要燒誰的額度：請求帶了自備金鑰就用它，否則動用環境預設供應商的共用池。
+ * 池空不是系統錯誤——demo 現場共用池會被玩爆，要讓呼叫端有機會把使用者導去填自己的金鑰。
  */
-export async function resolveViewerCredential(userId: string | null): Promise<ResolvedCredential | null> {
-  const { ai } = useRuntimeConfig()
-  const defaultProvider: AiProvider = isAiProvider(ai.defaultProvider) ? ai.defaultProvider : 'anthropic'
-
-  if (userId) {
-    const rows = await useDb()
-      .select({ provider: schema.aiCredentials.provider })
-      .from(schema.aiCredentials)
-      .where(eq(schema.aiCredentials.userId, userId))
-    const owned = rows.map(row => row.provider).filter(isAiProvider)
-    const chosen = owned.includes(defaultProvider) ? defaultProvider : owned[0]
-    if (chosen) return resolveCredential(userId, chosen)
-  }
-  return resolveCredential(null, defaultProvider)
+export function resolveCredential(own: ResolvedCredential | null): ResolvedCredential | null {
+  if (own) return own
+  const provider = defaultProvider()
+  const keys = pool(provider)
+  if (keys.length === 0) return null
+  return { provider, apiKey: keys[poolCursor++ % keys.length]!, source: 'pool' }
 }

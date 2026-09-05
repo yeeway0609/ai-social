@@ -2,14 +2,15 @@ import { and, eq, isNull, ne } from 'drizzle-orm'
 import { z } from 'zod'
 import { schema, useDb } from '../../db'
 import { pregenerateRenditions } from '../../utils/ai/render'
-import { getUserByUsername } from '../../utils/users'
+import type { ResolvedCredential } from '../../utils/ai/credentials'
 import { secretEquals } from '../../utils/crypto'
 
 const body = z.object({
   /** 一次最多處理幾則內容；預產是逐則五個語氣，量大時分批跑避免撞函式時限。 */
   limit: z.number().int().min(1).max(200).default(50),
-  /** 用這個帳號的自備金鑰產所有內容；不給就用各作者自己的金鑰、其次共用池。 */
-  asUsername: z.string().trim().min(1).optional()
+  /** 用這把金鑰產所有內容；不給就用共用池。金鑰只活在這個請求裡。 */
+  provider: z.enum(AI_PROVIDERS).optional(),
+  apiKey: z.string().trim().min(20).optional()
 })
 
 /**
@@ -23,24 +24,18 @@ export default defineEventHandler(async (event) => {
   if (!secret || !provided || !secretEquals(provided, secret)) {
     throw createError({ statusCode: 404, statusMessage: 'not_found' })
   }
-  const { limit, asUsername } = body.parse((await readBody(event).catch(() => null)) ?? {})
+  const { limit, provider, apiKey } = body.parse((await readBody(event).catch(() => null)) ?? {})
   const db = useDb()
-
-  let credentialUserId: string | undefined
-  if (asUsername) {
-    const user = await getUserByUsername(asUsername.toLowerCase())
-    if (!user) throw createError({ statusCode: 404, statusMessage: 'user_not_found' })
-    credentialUserId = user.id
-  }
+  const credential: ResolvedCredential | null = provider && apiKey ? { provider, apiKey, source: 'own' } : null
 
   const pendingPosts = await db
-    .select({ id: schema.posts.id, authorId: schema.posts.authorId })
+    .select({ id: schema.posts.id })
     .from(schema.posts)
     .leftJoin(schema.renditions, and(eq(schema.renditions.kind, 'post'), eq(schema.renditions.contentId, schema.posts.id)))
     .where(isNull(schema.renditions.id))
     .limit(limit)
   const pendingComments = await db
-    .select({ id: schema.comments.id, authorId: schema.comments.authorId })
+    .select({ id: schema.comments.id })
     .from(schema.comments)
     .leftJoin(schema.renditions, and(eq(schema.renditions.kind, 'comment'), eq(schema.renditions.contentId, schema.comments.id)))
     .where(and(isNull(schema.renditions.id), ne(schema.comments.originalText, '')))
@@ -50,12 +45,12 @@ export default defineEventHandler(async (event) => {
   let failed = 0
   // 內容之間串行、每則內部五個語氣並行：兼顧速度與不把金鑰池打到 rate limit
   for (const post of pendingPosts) {
-    const result = await pregenerateRenditions('post', post.id, credentialUserId ?? post.authorId)
+    const result = await pregenerateRenditions('post', post.id, credential)
     generated += result.generated
     failed += result.failed
   }
   for (const comment of pendingComments) {
-    const result = await pregenerateRenditions('comment', comment.id, credentialUserId ?? comment.authorId)
+    const result = await pregenerateRenditions('comment', comment.id, credential)
     generated += result.generated
     failed += result.failed
   }

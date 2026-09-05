@@ -1,44 +1,34 @@
 <script setup lang="ts">
-import { FetchError } from 'ofetch'
-
 const { logout } = useAuth()
 const toast = useToast()
 const credentialWarning = useCredentialWarning()
 
-const { data: credentials, refresh: refreshCredentials } = await useAsyncData('my-credentials', () => $fetch<CredentialSummary[]>('/api/me/credentials'), { server: false, default: () => [] })
+const { credential, hint, hasOwnCredential, save: saveOwnCredential, clear: clearOwnCredential } = useOwnCredential()
+const { invalidateAll } = useRenditionQueue()
 
 const provider = ref<AiProvider>('anthropic')
 const apiKey = ref('')
-const isSavingKey = ref(false)
-
-const canSaveKey = computed(() => apiKey.value.trim().length >= 20)
 
 const providerItems = AI_PROVIDERS.map(id => ({ label: AI_PROVIDER_LABELS[id], value: id }))
+const canSaveKey = computed(() => apiKey.value.trim().length >= 20)
 
 async function handleSaved() {
   toast.add({ title: '語氣已更新', color: 'success' })
   await navigateTo('/')
 }
 
-async function handleSubmitKey() {
-  isSavingKey.value = true
-  try {
-    const body: CredentialCreate = { provider: provider.value, apiKey: apiKey.value.trim() }
-    await $fetch('/api/me/credentials', { method: 'POST', body })
-    apiKey.value = ''
-    credentialWarning.dismiss()
-    await refreshCredentials()
-    toast.add({ title: '金鑰已儲存', color: 'success' })
-  } catch (err) {
-    toast.add({ title: err instanceof FetchError && err.status === 400 ? '金鑰格式不正確' : '儲存失敗', color: 'error' })
-  } finally {
-    isSavingKey.value = false
-  }
+function handleSubmitKey() {
+  saveOwnCredential({ provider: provider.value, apiKey: apiKey.value.trim() })
+  apiKey.value = ''
+  credentialWarning.dismiss()
+  // 之後的改寫改走自己的金鑰，已載入的內容重新來一次
+  invalidateAll()
+  toast.add({ title: '金鑰已存進這個瀏覽器', color: 'success' })
 }
 
-async function handleClickDeleteKey(target: AiProvider) {
-  await $fetch(`/api/me/credentials/${target}`, { method: 'DELETE' })
-  await refreshCredentials()
+function handleClickDeleteKey() {
+  clearOwnCredential()
+  invalidateAll()
 }
 </script>
 
@@ -64,32 +54,32 @@ async function handleClickDeleteKey(target: AiProvider) {
           自備 API 金鑰
         </h2>
         <p class="mt-1 text-sm text-muted">
-          改寫預設用團隊共用額度；用完時填入自己的金鑰就能繼續。金鑰加密存放、只顯示尾四碼。
+          改寫預設用團隊共用額度；用完時填入自己的金鑰就能繼續，也才能使用自訂語氣偏好。
         </p>
       </div>
 
-      <ul
-        v-if="credentials.length"
-        class="space-y-2"
+      <UAlert
+        color="neutral"
+        variant="subtle"
+        icon="i-lucide-shield-check"
+        title="金鑰只存在你的瀏覽器"
+        description="金鑰存在這個裝置的瀏覽器儲存空間，不會寫進我們的資料庫；每次改寫時隨請求送到伺服器轉交模型供應商，伺服器用完即丟、不記錄。換裝置或清除瀏覽資料需要重填。"
+      />
+
+      <div
+        v-if="hasOwnCredential && credential"
+        class="flex items-center justify-between rounded-lg border border-default px-3 py-2 text-sm"
       >
-        <li
-          v-for="credential in credentials"
-          :key="credential.provider"
-          class="flex items-center justify-between rounded-lg border border-default px-3 py-2 text-sm"
-        >
-          <span class="min-w-0">
-            {{ AI_PROVIDER_LABELS[credential.provider] }} <span class="font-mono text-muted">…{{ credential.hint }}</span>
-          </span>
-          <UButton
-            color="neutral"
-            variant="ghost"
-            size="xs"
-            icon="i-lucide-trash-2"
-            aria-label="刪除金鑰"
-            @click="handleClickDeleteKey(credential.provider)"
-          />
-        </li>
-      </ul>
+        <span>{{ AI_PROVIDER_LABELS[credential.provider] }} <span class="font-mono text-muted">…{{ hint }}</span></span>
+        <UButton
+          color="neutral"
+          variant="ghost"
+          size="xs"
+          icon="i-lucide-trash-2"
+          aria-label="從這個瀏覽器移除金鑰"
+          @click="handleClickDeleteKey"
+        />
+      </div>
 
       <form
         class="space-y-3"
@@ -109,9 +99,8 @@ async function handleClickDeleteKey(target: AiProvider) {
         />
         <UButton
           type="submit"
-          :loading="isSavingKey"
           :disabled="!canSaveKey"
-          label="儲存金鑰"
+          :label="hasOwnCredential ? '更換金鑰' : '存到這個瀏覽器'"
         />
       </form>
     </section>

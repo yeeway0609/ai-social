@@ -1,4 +1,4 @@
-import type { AiProvider, CredentialSource } from '../utils/ai'
+import type { CredentialSource } from '../utils/ai'
 import type { ContentKind, RewriteScale } from '../utils/content'
 
 export interface UserSummary {
@@ -22,16 +22,6 @@ export interface SettingsUpdate {
 export interface LoginRequest {
   username: string
   password: string
-}
-
-export interface CredentialSummary {
-  provider: AiProvider
-  hint: string
-}
-
-export interface CredentialCreate {
-  provider: AiProvider
-  apiKey: string
 }
 
 /**

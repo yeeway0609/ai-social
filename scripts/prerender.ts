@@ -1,22 +1,21 @@
 /**
  * 呼叫本機或 Preview 的預產端點，把所有還沒改寫的貼文與留言灌好預設語氣。
- * 用法：pnpm prerender <username> [base-url]
- *   username：用這個帳號在設定頁存的自備金鑰產所有內容
+ * 用法：pnpm prerender <provider> <apiKey> [base-url]
+ *   provider／apiKey：用這把金鑰產所有內容，金鑰只經過這次請求、不會存進資料庫
  *   base-url：dev server 位址，預設 http://localhost:3000
  */
 const secret = process.env.NUXT_ADMIN_SECRET
 if (!secret) throw new Error('NUXT_ADMIN_SECRET 未設定')
 
-const asUsername = process.argv[2]
-if (!asUsername) throw new Error('請指定要用哪個帳號的金鑰：pnpm prerender <username>')
-const base = process.argv[3] ?? 'http://localhost:3000'
+const [provider, apiKey, base = 'http://localhost:3000'] = process.argv.slice(2)
+if (!provider || !apiKey) throw new Error('用法：pnpm prerender <provider> <apiKey> [base-url]')
 let round = 0
 while (true) {
   round++
   const response = await fetch(`${base}/api/admin/prerender`, {
     method: 'POST',
     headers: { 'content-type': 'application/json', 'x-admin-secret': secret },
-    body: JSON.stringify({ limit: 20, asUsername })
+    body: JSON.stringify({ limit: 20, provider, apiKey })
   })
   if (!response.ok) throw new Error(`預產失敗：${response.status} ${await response.text()}`)
   const result = await response.json() as { processedPosts: number, processedComments: number, generated: number, failed: number }

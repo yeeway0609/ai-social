@@ -27,8 +27,6 @@ export default defineNuxtConfig({
   },
 
   runtimeConfig: {
-    // 加密使用者自備金鑰用的對稱金鑰；缺值時「自備金鑰」功能整條停用（見 server/utils/crypto.ts）
-    credentialSecret: '',
     sessionSecret: '',
 
     ai: {

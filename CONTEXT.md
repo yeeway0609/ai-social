@@ -71,9 +71,9 @@
 
 ### 自備金鑰（own credential）
 
-使用者自己填入、加密存放的 API key。
+使用者自己填入的 API key。只存在使用者的瀏覽器（localStorage），隨每次改寫請求以標頭送到伺服器、用完即丟；平台不保存。
 
-- 識別碼：`aiCredentials` 資料表、`CredentialSource` 的 `own`
+- 識別碼：`OwnCredential`、`useOwnCredential()`、`CredentialSource` 的 `own`、標頭 `x-ai-provider`／`x-ai-key`
 - 避免：「BYOK」（縮寫，非行業慣例到可直接使用的程度）
 
 ### 共用池（pool）
