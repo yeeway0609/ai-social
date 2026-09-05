@@ -3,7 +3,7 @@ import type { AnyPgColumn } from 'drizzle-orm/pg-core'
 import type { H3Event } from 'h3'
 import { schema, useDb } from '../../db'
 import { loadContent, type LoadedContent } from '../content'
-import { InvalidRenditionError, validateRenditionText } from './outputValidation'
+import { InvalidRenditionError, InvalidSemanticSimilarityError, isSemanticallySameAsOriginal, validateRenditionText, validateSemanticSimilarityForRendition } from './outputValidation'
 import { NVIDIA_BASE_URL, classifyRewriteError, nvidiaApiKeys, rewrite } from './nvidia'
 import { buildSystemPrompt, parseToneOutputs, wrapOriginal } from './prompt'
 import { measureRewriteScale } from './scale'
@@ -26,6 +26,8 @@ export const renditionColumns = {
 }
 
 type RenditionRow = { [K in keyof typeof renditionColumns]: string | number | null }
+type StoredRendition = { rendition: Rendition | null, isUnchanged: boolean }
+type GeneratedToneResult = Rendition | RenditionError | null
 
 /** 三種內容列表查出來的共同形狀；寫入端點回應自己剛建的內容時沒有 join，改寫欄位可省略。 */
 export interface ContentRow extends Partial<RenditionRow> {
@@ -61,7 +63,18 @@ function readSemanticSimilarity(row: Partial<RenditionRow>): SemanticSimilarityR
 
 export function toRendition(row: Partial<RenditionRow>): Rendition | null {
   if (typeof row.renditionText !== 'string' || typeof row.renditionScale !== 'string') return null
-  return { text: row.renditionText, scale: row.renditionScale as RewriteScale, semanticSimilarity: readSemanticSimilarity(row) }
+  const semanticSimilarity = readSemanticSimilarity(row)
+  if (isSemanticallySameAsOriginal(semanticSimilarity)) return null
+  return { text: row.renditionText, scale: row.renditionScale as RewriteScale, semanticSimilarity }
+}
+
+function toStoredRendition(row: Partial<RenditionRow> | null | undefined): StoredRendition {
+  if (!row || typeof row.renditionText !== 'string' || typeof row.renditionScale !== 'string') {
+    return { rendition: null, isUnchanged: false }
+  }
+  const semanticSimilarity = readSemanticSimilarity(row)
+  if (isSemanticallySameAsOriginal(semanticSimilarity)) return { rendition: null, isUnchanged: true }
+  return { rendition: { text: row.renditionText, scale: row.renditionScale as RewriteScale, semanticSimilarity }, isUnchanged: false }
 }
 
 /** 內容剛寫入、背景預產可能還沒跑完；超過這段時間仍沒有改寫就當預產失敗，直接給原文。 */
@@ -75,15 +88,15 @@ export function isRenditionPending(rendition: Rendition | null, createdAt: Date)
  */
 export function toContentSummary(row: ContentRow, viewer: Viewer): ContentSummary {
   const isOwn = row.authorId === viewer.id
-  const rendition = isOwn ? null : toRendition(row)
+  const stored = isOwn ? { rendition: null, isUnchanged: false } : toStoredRendition(row)
   return {
     id: row.id,
     author: row.author,
-    originalText: isOwn || viewer.tone === null ? row.originalText : null,
+    originalText: isOwn || viewer.tone === null || stored.isUnchanged ? row.originalText : null,
     isOwn,
     createdAt: row.createdAt.toISOString(),
-    rendition,
-    isRenditionPending: !isOwn && viewer.tone !== null && isRenditionPending(rendition, row.createdAt)
+    rendition: stored.rendition,
+    isRenditionPending: !isOwn && viewer.tone !== null && !stored.isUnchanged && isRenditionPending(stored.rendition, row.createdAt)
   }
 }
 
@@ -92,13 +105,13 @@ export async function getViewer(viewerId: string): Promise<Viewer> {
   return { id: viewerId, tone: viewer?.tone ? findTone(viewer.tone)?.id ?? null : null }
 }
 
-export async function lookupRendition(kind: ContentKind, contentId: string, tone: ToneId): Promise<Rendition | null> {
+export async function lookupStoredRendition(kind: ContentKind, contentId: string, tone: ToneId): Promise<StoredRendition> {
   const [row] = await useDb()
     .select(renditionColumns)
     .from(schema.renditions)
     .where(and(eq(schema.renditions.kind, kind), eq(schema.renditions.contentId, contentId), eq(schema.renditions.tone, tone)))
     .limit(1)
-  return row ? toRendition(row) : null
+  return toStoredRendition(row)
 }
 
 function writeSemanticSimilarity(semanticSimilarity: SemanticSimilarityResult | null) {
@@ -142,8 +155,8 @@ async function measureGeneratedSimilarities(content: LoadedContent, texts: strin
  * 一次模型呼叫產出所有目標語氣。回傳每個語氣的結果：成功是 Rendition、失敗是錯誤碼。
  * 整批呼叫失敗（逾時、金鑰、限流）時每個語氣都拿到同一個錯誤碼。
  */
-async function generateAll(content: LoadedContent, tones: readonly Tone[]): Promise<Map<string, Rendition | RenditionError>> {
-  const results = new Map<string, Rendition | RenditionError>()
+async function generateAll(content: LoadedContent, tones: readonly Tone[]): Promise<Map<string, GeneratedToneResult>> {
+  const results = new Map<string, GeneratedToneResult>()
 
   let raw: string
   try {
@@ -174,7 +187,19 @@ async function generateAll(content: LoadedContent, tones: readonly Tone[]): Prom
 
   const similarities = await measureGeneratedSimilarities(content, valid.map(item => item.text))
   valid.forEach(({ tone, text }, index) => {
-    results.set(tone.id, { text, scale: measureRewriteScale(content.originalText, text), semanticSimilarity: similarities[index]! })
+    const semanticSimilarity = similarities[index]!
+    try {
+      validateSemanticSimilarityForRendition(semanticSimilarity)
+    } catch (err) {
+      if (!(err instanceof InvalidSemanticSimilarityError)) throw err
+      results.set(tone.id, err.code)
+      return
+    }
+    if (isSemanticallySameAsOriginal(semanticSimilarity)) {
+      results.set(tone.id, null)
+      return
+    }
+    results.set(tone.id, { text, scale: measureRewriteScale(content.originalText, text), semanticSimilarity })
   })
   return results
 }
@@ -202,6 +227,7 @@ export async function pregenerateRenditions(kind: ContentKind, id: string) {
   let failed = 0
   for (const tone of targets) {
     const result = results.get(tone.id)
+    if (result === null) continue
     if (!result || typeof result === 'string') {
       failed++
       console.warn(`[renditions] ${kind}/${id} ${tone.id} 預產失敗：${result ?? 'unknown'}`)

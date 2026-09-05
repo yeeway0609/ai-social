@@ -1,0 +1,99 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">不痛 Tone 運作流程圖</title>
+  <desc id="desc">以註冊登入、設定語氣、發布內容、讀者瀏覽、AI 改寫與原文回退呈現平台運作流程。</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="10" markerHeight="10" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#5bb8ff"/>
+    </marker>
+    <style>
+      .page { fill: #0b1016; }
+      .title { fill: #f7f2e8; font: 700 54px system-ui, -apple-system, BlinkMacSystemFont, "Noto Sans TC", sans-serif; }
+      .subtitle { fill: #a8b4c2; font: 400 24px system-ui, -apple-system, BlinkMacSystemFont, "Noto Sans TC", sans-serif; }
+      .lane-title { fill: #8ed2ff; font: 700 20px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: 0.5px; }
+      .lane { fill: #101923; stroke: #2a3848; stroke-width: 2; }
+      .step { fill: #151f2a; stroke: #344557; stroke-width: 2; }
+      .process { fill: #172637; stroke: #5bb8ff; stroke-width: 2.5; }
+      .success { fill: #17281f; stroke: #b8f06a; stroke-width: 2.5; }
+      .fallback { fill: #2b2119; stroke: #ffb86b; stroke-width: 2.5; }
+      .label { fill: #f7f2e8; font: 700 25px system-ui, -apple-system, BlinkMacSystemFont, "Noto Sans TC", sans-serif; }
+      .body { fill: #c8d3de; font: 400 19px system-ui, -apple-system, BlinkMacSystemFont, "Noto Sans TC", sans-serif; }
+      .note { fill: #9fb0c0; font: 400 17px system-ui, -apple-system, BlinkMacSystemFont, "Noto Sans TC", sans-serif; }
+      .arrow { fill: none; stroke: #5bb8ff; stroke-width: 4; marker-end: url(#arrow); }
+      .arrow-soft { fill: none; stroke: #6e8195; stroke-width: 3; marker-end: url(#arrow); }
+    </style>
+  </defs>
+
+  <rect class="page" width="1600" height="900"/>
+  <text class="title" x="90" y="95">不痛 Tone：運作流程</text>
+  <text class="subtitle" x="92" y="135">使用者發表原文，平台依讀者語氣自動產生閱讀版本；模型不可用時仍安全顯示原文。</text>
+
+  <rect class="lane" x="70" y="185" width="1460" height="190" rx="24"/>
+  <text class="lane-title" x="105" y="225">USER SETUP</text>
+  <rect class="step" x="120" y="255" width="300" height="92" rx="18"/>
+  <text class="label" x="150" y="294">註冊帳號登入</text>
+  <text class="body" x="150" y="326">建立身分，進入平台</text>
+
+  <rect class="step" x="520" y="255" width="350" height="92" rx="18"/>
+  <text class="label" x="550" y="294">設定閱讀語氣</text>
+  <text class="body" x="550" y="326">七種預設語氣擇一</text>
+
+  <rect class="step" x="980" y="255" width="360" height="92" rx="18"/>
+  <text class="label" x="1010" y="294">發布或瀏覽內容</text>
+  <text class="body" x="1010" y="326">貼文、留言、聊天室</text>
+
+  <path class="arrow" d="M 420 301 C 455 301, 485 301, 520 301"/>
+  <path class="arrow" d="M 870 301 C 915 301, 935 301, 980 301"/>
+
+  <rect class="lane" x="70" y="420" width="1460" height="315" rx="24"/>
+  <text class="lane-title" x="105" y="460">PLATFORM RUNTIME</text>
+
+  <rect class="process" x="120" y="500" width="300" height="112" rx="18"/>
+  <text class="label" x="150" y="540">取得正式原文</text>
+  <text class="body" x="150" y="572">從資料庫讀內容</text>
+  <text class="note" x="150" y="600">原文是唯一事實來源</text>
+
+  <rect class="process" x="505" y="500" width="310" height="112" rx="18"/>
+  <text class="label" x="535" y="540">檢查讀者關係</text>
+  <text class="body" x="535" y="572">作者本人直接看原文</text>
+  <text class="note" x="535" y="600">他人內容才進入改寫</text>
+
+  <rect class="process" x="900" y="500" width="305" height="112" rx="18"/>
+  <text class="label" x="930" y="540">查詢固定語氣快取</text>
+  <text class="body" x="930" y="572">命中即直接回傳</text>
+  <text class="note" x="930" y="600">降低延遲與模型成本</text>
+
+  <rect class="process" x="1280" y="500" width="210" height="112" rx="18"/>
+  <text class="label" x="1310" y="540">呼叫模型</text>
+  <text class="body" x="1310" y="572">NVIDIA NIM</text>
+  <text class="note" x="1310" y="600">平台串接</text>
+
+  <path class="arrow" d="M 420 556 C 455 556, 470 556, 505 556"/>
+  <path class="arrow" d="M 815 556 C 850 556, 865 556, 900 556"/>
+  <path class="arrow" d="M 1205 556 C 1235 556, 1250 556, 1280 556"/>
+
+  <rect class="success" x="185" y="775" width="345" height="82" rx="18"/>
+  <text class="label" x="220" y="813">顯示原文</text>
+  <text class="body" x="220" y="842">自己的內容或模型失敗</text>
+
+  <rect class="success" x="625" y="775" width="405" height="82" rx="18"/>
+  <text class="label" x="660" y="813">顯示閱讀版本</text>
+  <text class="body" x="660" y="842">實質改寫才標示 AI</text>
+
+  <rect class="fallback" x="1125" y="775" width="365" height="82" rx="18"/>
+  <text class="label" x="1160" y="813">原文回退與錯誤提示</text>
+  <text class="body" x="1160" y="842">逾時、限流或輸出驗證失敗</text>
+
+  <path class="arrow-soft" d="M 650 612 C 560 680, 455 730, 360 775"/>
+  <text class="note" x="440" y="695">作者本人</text>
+
+  <path class="arrow" d="M 1052 612 C 980 690, 900 735, 830 775"/>
+  <text class="note" x="925" y="700">快取命中</text>
+
+  <path class="arrow" d="M 1385 612 C 1275 700, 1075 735, 930 775"/>
+  <text class="note" x="1190" y="700">生成成功</text>
+
+  <path class="arrow-soft" d="M 1420 612 C 1438 680, 1400 728, 1320 775"/>
+  <text class="note" x="1410" y="700">生成失敗</text>
+
+  <rect x="95" y="690" width="1390" height="2" fill="#263544"/>
+</svg>

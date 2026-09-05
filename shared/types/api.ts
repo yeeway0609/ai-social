@@ -97,6 +97,8 @@ export type RenditionError
     | 'invalid_model_output'
     | 'token_changed'
     | 'output_too_long'
+    | 'semantic_similarity_unavailable'
+    | 'semantic_similarity_too_low'
 
 export interface OriginalResult {
   kind: ContentKind

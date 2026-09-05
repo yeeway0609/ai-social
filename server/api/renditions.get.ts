@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { getViewer, isRenditionPending, lookupRendition } from '../utils/ai/render'
+import { getViewer, isRenditionPending, lookupStoredRendition } from '../utils/ai/render'
 import { canView, loadContent } from '../utils/content'
 import { requireUserId } from '../utils/session'
 
@@ -17,7 +17,9 @@ export default defineEventHandler(async (event): Promise<RenditionLookup> => {
   if (!content) throw createError({ statusCode: 404, statusMessage: 'content_not_found' })
 
   const { tone } = await getViewer(viewerId)
-  const rendition = tone && content.authorId !== viewerId ? await lookupRendition(kind, id, tone) : null
-  const isPending = !!tone && content.authorId !== viewerId && isRenditionPending(rendition, content.createdAt)
-  return { kind, id, rendition, isPending, originalText: rendition || isPending ? null : content.originalText }
+  const stored = tone && content.authorId !== viewerId
+    ? await lookupStoredRendition(kind, id, tone)
+    : { rendition: null, isUnchanged: false }
+  const isPending = !!tone && content.authorId !== viewerId && !stored.isUnchanged && isRenditionPending(stored.rendition, content.createdAt)
+  return { kind, id, rendition: stored.rendition, isPending, originalText: stored.rendition || isPending ? null : content.originalText }
 })

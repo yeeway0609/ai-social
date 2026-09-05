@@ -12,7 +12,7 @@
 
 成功回傳 `status: 'ok'`、原始 `score`、API 回報的 `model` 與 `version: 'cosine-nfc-v1'`。分數範圍為 −1 至 1，越高表示向量越接近；前端在貼文頁顯示為百分比到小數第一位（`XX.X%`），但不稱為「意思改變百分比」或「原意保留率」，也不套用改寫幅度的分級門檻。
 
-失敗回傳 `status: 'unavailable'`、`score: null` 與分類錯誤碼，區分輸入錯誤、無金鑰、驗證失敗、限流、逾時、服務錯誤與無效向量。評估失敗不丟棄已成功生成的改寫，而是把錯誤碼隨改寫一起寫入 `renditions`。此模組不回傳或記錄金鑰、原文、向量與原始錯誤訊息。
+失敗回傳 `status: 'unavailable'`、`score: null` 與分類錯誤碼，區分輸入錯誤、無金鑰、驗證失敗、限流、逾時、服務錯誤與無效向量。生成整合層採嚴格門檻：分數不可用時不採用改寫，也不把結果寫入 `renditions`。此模組不回傳或記錄金鑰、原文、向量與原始錯誤訊息。
 
 比較前統一 Unicode NFC 與換行，不刪除標點或否定詞。向量計算拒絕空向量、零向量、維度不符及非有限值，縮放後正規化以避免數值溢位。
 
@@ -25,3 +25,5 @@ node --test tests/semanticSimilarity.test.mjs tests/semanticSimilarityCalibratio
 ```
 
 測試使用人工向量與模擬 HTTP 回應，不發送真實貼文、不耗用模型額度。它驗證計算與錯誤處理；繁體中文校準樣本與真實金鑰的實測結果見 [SEMANTIC_SIMILARITY_CALIBRATION.md](SEMANTIC_SIMILARITY_CALIBRATION.md)。
+
+目前已完成計算模組並接上寫入時預產流程。有效改寫會在輸出驗證通過後評估；只有 `score > 0.8` 且不等同 1 的改寫會被採用並寫入 `renditions`。評估失敗或 `score <= 0.8` 時不寫入該語氣改寫；`score` 等同 1 時視為沒有實質改寫，讀取時顯示原文且不標示為改寫。已建立本地繁體中文校準樣本與排序測試，真實 NIM embedding 金鑰實測仍需持續校準，不可把舊 `scale` 字串直接當成 embedding 分數。
