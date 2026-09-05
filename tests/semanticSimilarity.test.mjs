@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import { cosineSimilarity, measureSemanticSimilarity } from '../server/utils/ai/semanticSimilarity.ts'
 
-const input = { originalText: '這次會議沒有效率。', rewrittenText: '這次會議的效率還有改善空間。', apiKey: 'test-only' }
+const input = { originalText: '這次會議沒有效率。', rewrittenText: '這次會議的效率還有改善空間。', apiKey: 'test-only', model: 'test-model', embeddingsUrl: 'https://embeddings.test/v1/embeddings' }
 const payload = (data = [{ index: 1, embedding: [3, 4] }, { index: 0, embedding: [1, 0] }]) => ({ model: 'test-model', data })
 const respond = value => async () => Response.json(value)
 
@@ -27,7 +27,7 @@ test('同一請求送出兩段文字，依 index 讀取向量並回傳模型版�
   let calls = 0
   const result = await measureSemanticSimilarity({ ...input, originalText: 'e\u0301\r\n文字' }, async (url, options) => {
     calls++
-    assert.equal(url, 'https://api.openai.com/v1/embeddings')
+    assert.equal(url, input.embeddingsUrl)
     assert.equal(options.redirect, 'error')
     const body = JSON.parse(options.body)
     assert.deepEqual(body.input, ['é\n文字', input.rewrittenText])
@@ -56,11 +56,11 @@ test('拒絕重複、遺失、額外索引及無效向量', async () => {
 })
 
 test('驗證失敗、限流與服務錯誤分流且不重試', async () => {
-  for (const [status, expected] of [[401, 'embedding_authentication_failed'], [403, 'embedding_authentication_failed'], [429, 'embedding_rate_limited'], [500, 'embedding_provider_error']]) {
+  for (const [status, expected] of [[401, 'embedding_authentication_failed'], [403, 'embedding_authentication_failed'], [429, 'embedding_rate_limited'], [500, 'embedding_service_error']]) {
     let calls = 0
     const result = await measureSemanticSimilarity(input, async () => {
       calls++
-      return new Response('sensitive-provider-response', { status })
+      return new Response('sensitive-service-response', { status })
     })
     assert.deepEqual(result, { status: 'unavailable', score: null, error: expected })
     assert.equal(calls, 1)
@@ -72,7 +72,7 @@ test('無效 JSON 與網路錯誤不洩漏內容', async () => {
   const result = await measureSemanticSimilarity(input, async () => {
     throw new Error('sensitive-request')
   })
-  assert.deepEqual(result, { status: 'unavailable', score: null, error: 'embedding_provider_error' })
+  assert.deepEqual(result, { status: 'unavailable', score: null, error: 'embedding_service_error' })
 })
 
 test('逾時中止請求且回傳無分數', async () => {

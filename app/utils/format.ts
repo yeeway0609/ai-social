@@ -3,11 +3,11 @@ const HOUR_MS = 60 * MINUTE_MS
 const DAY_MS = 24 * HOUR_MS
 
 export function formatRelativeTime(iso: string, now = Date.now()) {
-  const diff = now - new Date(iso).getTime()
-  if (diff < MINUTE_MS) return '剛剛'
-  if (diff < HOUR_MS) return `${Math.floor(diff / MINUTE_MS)} 分鐘前`
-  if (diff < DAY_MS) return `${Math.floor(diff / HOUR_MS)} 小時前`
-  if (diff < 7 * DAY_MS) return `${Math.floor(diff / DAY_MS)} 天前`
+  const elapsedMs = now - new Date(iso).getTime()
+  if (elapsedMs < MINUTE_MS) return '剛剛'
+  if (elapsedMs < HOUR_MS) return `${Math.floor(elapsedMs / MINUTE_MS)} 分鐘前`
+  if (elapsedMs < DAY_MS) return `${Math.floor(elapsedMs / HOUR_MS)} 小時前`
+  if (elapsedMs < 7 * DAY_MS) return `${Math.floor(elapsedMs / DAY_MS)} 天前`
   const date = new Date(iso)
   return `${date.getMonth() + 1}/${date.getDate()}`
 }

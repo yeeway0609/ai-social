@@ -4,30 +4,24 @@
 
 ## 呼叫與金鑰
 
-呼叫端提供 `originalText`、`rewrittenText` 與 `apiKey`，可指定 `model`、`timeoutMs`、`embeddingsUrl`（任何 OpenAI 相容的 embeddings 端點）與 `extraBody`（端點專屬參數）。預設端點為 OpenAI 官方、模型 `text-embedding-3-small`，預設逾時為 5000 毫秒，不自動重試。
+呼叫端提供 `originalText`、`rewrittenText`、`apiKey`、`model` 與 `embeddingsUrl`（OpenAI 相容的 embeddings 端點），可再指定 `timeoutMs`（預設 5000 毫秒，不自動重試）與 `extraBody`（端點專屬參數）。模組沒有內建任何端點或模型預設值，也不自行查詢資料庫或金鑰。
 
-目前的整合走 NVIDIA NIM：端點 `https://integrate.api.nvidia.com/v1/embeddings`、模型由 `NUXT_AI_EMBEDDING_MODEL` 決定（預設 `nvidia/nemotron-3-embed-1b`）、金鑰與改寫模型共用 `NUXT_AI_NVIDIA_API_KEY`，並帶 `input_type: passage`。評估只在寫入時預產改寫的流程裡發生，讀取路徑不重算。模組不自行查詢資料庫或金鑰。
+目前的整合走 NVIDIA NIM：端點 `https://integrate.api.nvidia.com/v1/embeddings`、模型由 `NUXT_AI_EMBEDDING_MODEL` 決定（預設 `nvidia/nemotron-3-embed-1b`）、金鑰與改寫模型共用 `NUXT_AI_NVIDIA_API_KEY`，並帶 `input_type: passage`。評估只在寫入時預產改寫的流程裡發生，讀取路徑不重算。
 
 ## 結果
 
-成功回傳 `status: 'ok'`、原始 `score`、API 回報的 `model` 與 `version: 'cosine-nfc-v1'`。分數範圍為 −1 至 1，越高表示向量越接近；前端顯示為百分比到小數第一位（`XX.X%`），但不稱為「意思改變百分比」或「原意保留率」，也不套用舊 Dice 的分級門檻。
+成功回傳 `status: 'ok'`、原始 `score`、API 回報的 `model` 與 `version: 'cosine-nfc-v1'`。分數範圍為 −1 至 1，越高表示向量越接近；前端在貼文頁顯示為百分比到小數第一位（`XX.X%`），但不稱為「意思改變百分比」或「原意保留率」，也不套用改寫幅度的分級門檻。
 
-失敗回傳 `status: 'unavailable'`、`score: null` 與分類錯誤碼，區分輸入錯誤、無金鑰、驗證失敗、限流、逾時、供應商錯誤與無效向量。整合時評估失敗不應丟棄已成功生成的改寫。此模組不回傳或記錄金鑰、原文、向量與原始錯誤訊息。
+失敗回傳 `status: 'unavailable'`、`score: null` 與分類錯誤碼，區分輸入錯誤、無金鑰、驗證失敗、限流、逾時、服務錯誤與無效向量。評估失敗不丟棄已成功生成的改寫，而是把錯誤碼隨改寫一起寫入 `renditions`。此模組不回傳或記錄金鑰、原文、向量與原始錯誤訊息。
 
 比較前統一 Unicode NFC 與換行，不刪除標點或否定詞。向量計算拒絕空向量、零向量、維度不符及非有限值，縮放後正規化以避免數值溢位。
 
-## 驗證與整合狀態
+## 驗證
 
 使用 Node.js 22.18 以上或 24 執行：
 
 ```bash
-node --test tests/semanticSimilarity.test.mjs
+node --test tests/semanticSimilarity.test.mjs tests/semanticSimilarityCalibration.test.mjs
 ```
 
-測試使用人工向量與模擬 HTTP 回應，不發送真實貼文、不耗用模型額度。它驗證計算與錯誤處理，不代表繁體中文語意品質已驗收。
-
-目前已完成計算模組並接上生成流程。有效改寫會在輸出驗證通過後評估；評估失敗不讓改寫失敗，而是回傳 `semanticSimilarity: { status: 'unavailable', score: null, error }`。分數／模型／版本或評估錯誤隨改寫一起寫入 `renditions`。已建立本地繁體中文校準樣本與排序測試，真實 embedding 金鑰實測仍未完成，不可把舊 `scale` 字串直接當成 embedding 分數。
-
-驗證紀錄：繁中校準樣本涵蓋相同文字、同義改述、純語氣調整、否定翻轉、數字改動、刪除重要資訊及無關內容；離線測試使用人工向量驗證排序，不耗用真實金鑰。2026 年 9 月 5 日重新下載依賴時仍被 pnpm 最低發布時間政策阻擋，`node_modules/.bin` 未建立，因此本機完整 lint／typecheck／build 尚未完成。
-
-API 參考：[OpenAI Embeddings](https://developers.openai.com/api/reference/resources/embeddings/methods/create)、[模型說明](https://developers.openai.com/api/docs/models/text-embedding-3-small)。
+測試使用人工向量與模擬 HTTP 回應，不發送真實貼文、不耗用模型額度。它驗證計算與錯誤處理；繁體中文校準樣本與真實金鑰的實測結果見 [SEMANTIC_SIMILARITY_CALIBRATION.md](SEMANTIC_SIMILARITY_CALIBRATION.md)。

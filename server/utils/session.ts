@@ -1,7 +1,8 @@
-import { createHmac, timingSafeEqual } from 'node:crypto'
+import { createHmac } from 'node:crypto'
 import { eq } from 'drizzle-orm'
 import type { H3Event } from 'h3'
 import { schema, useDb } from '../db'
+import { secretEquals } from './crypto'
 
 const COOKIE = 'ai-social-session'
 
@@ -33,10 +34,7 @@ export function getUserId(event: H3Event): string | null {
   if (separator < 0) return null
 
   const userId = raw.slice(0, separator)
-  const provided = Buffer.from(raw.slice(separator + 1))
-  const expected = Buffer.from(sign(userId))
-
-  if (provided.length !== expected.length || !timingSafeEqual(provided, expected)) return null
+  if (!secretEquals(raw.slice(separator + 1), sign(userId))) return null
   return userId
 }
 

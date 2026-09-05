@@ -3,7 +3,8 @@ type OutgoingStatus = 'pending' | 'failed'
 
 /** 距離頁底多少像素內仍視為「在最底」，新訊息到達時才自動跟隨。 */
 const AT_BOTTOM_THRESHOLD_PX = 80
-const TEXT_COUNTER_THRESHOLD = 400
+/** 字數接近上限才顯示計數，平常不佔版面。 */
+const COUNTER_VISIBLE_FROM_CHAR_COUNT = 400
 
 const route = useRoute()
 const { user } = useAuth()
@@ -25,9 +26,10 @@ const other = computed(() => {
 })
 useHead({ title: () => other.value?.displayName ?? '對話' })
 
-const draftLength = computed(() => draft.value.length)
-const isOverLimit = computed(() => draftLength.value > MAX_TEXT_LENGTH)
-const shouldShowCounter = computed(() => draftLength.value > TEXT_COUNTER_THRESHOLD)
+// 用 UTF-16 長度計，跟伺服器 zod 的 max 同一種算法，前端說能送的伺服器一定收
+const draftCharCount = computed(() => draft.value.length)
+const isOverLimit = computed(() => draftCharCount.value > MAX_TEXT_LENGTH)
+const shouldShowCounter = computed(() => draftCharCount.value > COUNTER_VISIBLE_FROM_CHAR_COUNT)
 const canSend = computed(() => draft.value.trim().length > 0 && !isOverLimit.value)
 /** 輪詢游標只能用伺服器發的 id，樂觀訊息的 temp id 伺服器不認得。 */
 const lastServerMessageId = computed(() => {
@@ -173,7 +175,7 @@ function handleKeydownEnter(event: KeyboardEvent) {
           v-for="message in messages"
           :key="message.id"
           :message="message"
-          :is-pending="outgoingStatuses.get(message.id) === 'pending'"
+          :is-sending="outgoingStatuses.get(message.id) === 'pending'"
           :is-failed="outgoingStatuses.get(message.id) === 'failed'"
           @retry="handleClickRetry(message)"
         />
@@ -207,7 +209,7 @@ function handleKeydownEnter(event: KeyboardEvent) {
         class="mt-1 text-right text-xs"
         :class="isOverLimit ? 'text-error' : 'text-muted'"
       >
-        {{ draftLength }}／{{ MAX_TEXT_LENGTH }}
+        {{ draftCharCount }}／{{ MAX_TEXT_LENGTH }}
       </p>
     </form>
   </div>

@@ -13,8 +13,9 @@ const text = ref('')
 const isSubmitting = ref(false)
 
 const trimmedText = computed(() => text.value.trim())
-const length = computed(() => Array.from(text.value).length)
-const isOverLimit = computed(() => length.value > MAX_TEXT_LENGTH)
+// 用 UTF-16 長度計，跟伺服器 zod 的 max 同一種算法，前端說能送的伺服器一定收
+const charCount = computed(() => text.value.length)
+const isOverLimit = computed(() => charCount.value > MAX_TEXT_LENGTH)
 const canSubmit = computed(() => trimmedText.value.length > 0 && !isOverLimit.value && !isSubmitting.value)
 
 function handleSubmitText() {
@@ -49,7 +50,7 @@ function handleSubmitText() {
         class="text-xs tabular-nums"
         :class="isOverLimit ? 'text-error' : 'text-muted'"
       >
-        {{ length }} / {{ MAX_TEXT_LENGTH }}
+        {{ charCount }} / {{ MAX_TEXT_LENGTH }}
       </span>
       <UButton
         type="submit"

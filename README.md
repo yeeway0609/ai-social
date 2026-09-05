@@ -19,8 +19,6 @@ pnpm db:seed              # 預建 demo 帳號（複製 scripts/seed-users.examp
 pnpm dev                  # http://localhost:3000
 ```
 
-沒有模型金鑰時把 `.env` 的 `NUXT_AI_MOCK` 設為 `true`，改寫會退化成在原文前加語氣標記，整個流程照樣能走。
-
 `pnpm db:push` 直接同步 schema、不留 migration 檔，適合早期快速改動；schema 定案後改用
 `pnpm db:generate` ＋ `pnpm db:migrate`。
 

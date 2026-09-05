@@ -1,13 +1,15 @@
 <script setup lang="ts">
-/** 引導設定與設定頁共用的語氣表單；儲存後重抓所有列表，讓內容換成新語氣的改寫。 */
+/**
+ * 引導設定與設定頁共用的語氣表單；儲存後重抓所有列表，讓內容換成新語氣的改寫。
+ * 自訂語氣偏好欄位先以停用狀態保留在版面上，讓使用者知道這個能力存在、只是尚未開放。
+ */
 const props = defineProps<{ submitLabel: string }>()
 const emit = defineEmits<{ saved: [user: CurrentUser] }>()
 
 const { user, saveSettings } = useAuth()
 const toast = useToast()
 
-const defaultTone = TONES[0]?.id ?? 'gentle_friendly'
-const tone = ref(findTone(user.value?.tone ?? '')?.id ?? defaultTone)
+const tone = ref<ToneId>(user.value?.tone ?? DEFAULT_TONE.id)
 const isSubmitting = ref(false)
 
 async function handleSubmitSettings() {
@@ -64,6 +66,19 @@ async function handleSubmitSettings() {
         </span>
       </label>
     </fieldset>
+
+    <UFormField
+      label="額外的語氣偏好（選填）"
+      name="customInstruction"
+      description="用自己的話補充，例如「多用台語詞」「不要用驚嘆號」。"
+    >
+      <UTextarea
+        class="w-full"
+        :rows="3"
+        disabled
+        placeholder="尚未支援，之後會開放"
+      />
+    </UFormField>
 
     <UButton
       class="w-full justify-center"

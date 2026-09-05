@@ -14,7 +14,7 @@ export const users = pgTable('users', {
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
 }, table => [uniqueIndex('users_username_key').on(table.username)])
 
-/** 只存原文；改寫是衍生資料，不進資料庫。 */
+/** 只存原文；改寫存在 renditions，永不回寫這裡。 */
 export const posts = pgTable('posts', {
   id: uuid('id').primaryKey().defaultRandom(),
   authorId: uuid('author_id').notNull().references(() => users.id, { onDelete: 'cascade' }),

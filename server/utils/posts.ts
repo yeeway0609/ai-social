@@ -1,6 +1,6 @@
 import { and, desc, eq, sql, type SQL } from 'drizzle-orm'
 import { schema, useDb } from '../db'
-import { getViewerTone, isRenditionPending, renditionColumns, renditionJoin, toRendition } from './ai/render'
+import { getViewer, renditionColumns, renditionJoin, toContentSummary, type Viewer } from './ai/render'
 import { beforeCursor, encodeCursor, PAGE_SIZE } from './pagination'
 import { userSummaryColumns } from './users'
 
@@ -22,30 +22,20 @@ function postColumns(viewerId: string) {
 type PostRow = Awaited<ReturnType<typeof fetchPosts>>[number]
 
 /** 讀者語氣下的改寫一起 join 出來，讀取端不再另外打改寫服務。 */
-async function fetchPosts(viewerId: string, where: SQL | undefined, limit: number) {
-  const viewerTone = await getViewerTone(viewerId)
+function fetchPosts(viewer: Viewer, where: SQL | undefined, limit: number) {
   return useDb()
-    .select(postColumns(viewerId))
+    .select(postColumns(viewer.id))
     .from(schema.posts)
     .innerJoin(schema.users, eq(schema.users.id, schema.posts.authorId))
-    .leftJoin(schema.renditions, renditionJoin('post', schema.posts.id, viewerTone))
+    .leftJoin(schema.renditions, renditionJoin('post', schema.posts.id, viewer.tone))
     .where(where)
     .orderBy(desc(schema.posts.createdAt), desc(schema.posts.id))
     .limit(limit)
 }
 
-/** 他人的貼文不帶原文——前端只能拿到改寫版，或明確要求「顯示原文」。 */
-function toSummary(row: PostRow, viewerId: string): PostSummary {
-  const isOwn = row.authorId === viewerId
-  const rendition = isOwn ? null : toRendition(row)
+function toPostSummary(row: PostRow, viewer: Viewer): PostSummary {
   return {
-    id: row.id,
-    author: row.author,
-    originalText: isOwn ? row.originalText : null,
-    isOwn,
-    createdAt: row.createdAt.toISOString(),
-    rendition,
-    isRenditionPending: !isOwn && isRenditionPending(rendition, row.createdAt),
+    ...toContentSummary(row, viewer),
     likeCount: Number(row.likeCount),
     commentCount: Number(row.commentCount),
     isLiked: row.isLiked
@@ -53,27 +43,29 @@ function toSummary(row: PostRow, viewerId: string): PostSummary {
 }
 
 export async function listPosts(viewerId: string, options: { cursor?: string, authorId?: string }): Promise<Page<PostSummary>> {
+  const viewer = await getViewer(viewerId)
   const where = and(
     beforeCursor(schema.posts.createdAt, schema.posts.id, options.cursor),
     options.authorId ? eq(schema.posts.authorId, options.authorId) : undefined
   )
-  const rows = await fetchPosts(viewerId, where, PAGE_SIZE + 1)
+  const rows = await fetchPosts(viewer, where, PAGE_SIZE + 1)
   const hasMore = rows.length > PAGE_SIZE
   const pageRows = hasMore ? rows.slice(0, PAGE_SIZE) : rows
   const last = pageRows.at(-1)
   return {
-    items: pageRows.map(row => toSummary(row, viewerId)),
+    items: pageRows.map(row => toPostSummary(row, viewer)),
     nextCursor: hasMore && last ? encodeCursor(last.createdAt, last.id) : null
   }
 }
 
 export async function getPost(id: string, viewerId: string): Promise<PostSummary | null> {
-  const [row] = await fetchPosts(viewerId, eq(schema.posts.id, id), 1)
-  return row ? toSummary(row, viewerId) : null
+  const viewer = await getViewer(viewerId)
+  const [row] = await fetchPosts(viewer, eq(schema.posts.id, id), 1)
+  return row ? toPostSummary(row, viewer) : null
 }
 
 export async function listComments(postId: string, viewerId: string): Promise<CommentSummary[]> {
-  const viewerTone = await getViewerTone(viewerId)
+  const viewer = await getViewer(viewerId)
   const rows = await useDb()
     .select({
       id: schema.comments.id,
@@ -85,21 +77,9 @@ export async function listComments(postId: string, viewerId: string): Promise<Co
     })
     .from(schema.comments)
     .innerJoin(schema.users, eq(schema.users.id, schema.comments.authorId))
-    .leftJoin(schema.renditions, renditionJoin('comment', schema.comments.id, viewerTone))
+    .leftJoin(schema.renditions, renditionJoin('comment', schema.comments.id, viewer.tone))
     .where(eq(schema.comments.postId, postId))
     .orderBy(schema.comments.createdAt, schema.comments.id)
 
-  return rows.map((row) => {
-    const isOwn = row.authorId === viewerId
-    const rendition = isOwn ? null : toRendition(row)
-    return {
-      id: row.id,
-      author: row.author,
-      originalText: isOwn ? row.originalText : null,
-      isOwn,
-      createdAt: row.createdAt.toISOString(),
-      rendition,
-      isRenditionPending: !isOwn && isRenditionPending(rendition, row.createdAt)
-    }
-  })
+  return rows.map(row => toContentSummary(row, viewer))
 }

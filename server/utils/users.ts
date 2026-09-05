@@ -19,7 +19,8 @@ export async function getCurrentUser(userId: string): Promise<CurrentUser | null
     .limit(1)
 
   if (!row) return null
-  return { ...row, onboardedAt: row.onboardedAt?.toISOString() ?? null }
+  // 值域外的舊值當作沒有語氣，前端會把使用者帶回引導設定重選
+  return { ...row, tone: row.tone ? findTone(row.tone)?.id ?? null : null, onboardedAt: row.onboardedAt?.toISOString() ?? null }
 }
 
 export async function getUserByUsername(username: string): Promise<UserSummary | null> {

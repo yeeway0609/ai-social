@@ -6,7 +6,7 @@ export type SemanticSimilarityError
     | 'embedding_authentication_failed'
     | 'embedding_rate_limited'
     | 'embedding_timeout'
-    | 'embedding_provider_error'
+    | 'embedding_service_error'
     | 'invalid_embedding_output'
 
 export type SemanticSimilarityResult = {

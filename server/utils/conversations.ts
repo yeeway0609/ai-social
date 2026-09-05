@@ -1,6 +1,6 @@
 import { and, asc, eq, gt, ne, or, sql } from 'drizzle-orm'
 import { schema, useDb } from '../db'
-import { getViewerTone, isRenditionPending, renditionColumns, renditionJoin, toRendition } from './ai/render'
+import { getViewer, renditionColumns, renditionJoin, toContentSummary } from './ai/render'
 import { userSummaryColumns } from './users'
 
 function orderPair(a: string, b: string) {
@@ -74,11 +74,11 @@ export async function listMessages(conversationId: string, viewerId: string, aft
     afterCreatedAt = anchor?.createdAt
   }
 
-  const viewerTone = await getViewerTone(viewerId)
+  const viewer = await getViewer(viewerId)
   const rows = await db
     .select({
       id: schema.messages.id,
-      senderId: schema.messages.senderId,
+      authorId: schema.messages.senderId,
       originalText: schema.messages.originalText,
       createdAt: schema.messages.createdAt,
       author: userSummaryColumns,
@@ -86,7 +86,7 @@ export async function listMessages(conversationId: string, viewerId: string, aft
     })
     .from(schema.messages)
     .innerJoin(schema.users, eq(schema.users.id, schema.messages.senderId))
-    .leftJoin(schema.renditions, renditionJoin('message', schema.messages.id, viewerTone))
+    .leftJoin(schema.renditions, renditionJoin('message', schema.messages.id, viewer.tone))
     .where(and(
       eq(schema.messages.conversationId, conversationId),
       afterCreatedAt && afterId
@@ -95,20 +95,7 @@ export async function listMessages(conversationId: string, viewerId: string, aft
     ))
     .orderBy(asc(schema.messages.createdAt), asc(schema.messages.id))
 
-  return rows.map((row) => {
-    const isOwn = row.senderId === viewerId
-    const rendition = isOwn ? null : toRendition(row)
-    return {
-      id: row.id,
-      conversationId,
-      author: row.author,
-      originalText: isOwn ? row.originalText : null,
-      isOwn,
-      createdAt: row.createdAt.toISOString(),
-      rendition,
-      isRenditionPending: !isOwn && isRenditionPending(rendition, row.createdAt)
-    }
-  })
+  return rows.map(row => ({ ...toContentSummary(row, viewer), conversationId }))
 }
 
 export async function sendMessage(conversationId: string, senderId: string, text: string): Promise<MessageSummary> {
@@ -123,13 +110,7 @@ export async function sendMessage(conversationId: string, senderId: string, text
     .where(eq(schema.conversations.id, conversationId))
   const [author] = await db.select(userSummaryColumns).from(schema.users).where(eq(schema.users.id, senderId)).limit(1)
   return {
-    id: message!.id,
-    conversationId,
-    author: author!,
-    originalText: text,
-    isOwn: true,
-    createdAt: message!.createdAt.toISOString(),
-    rendition: null,
-    isRenditionPending: false
+    ...toContentSummary({ id: message!.id, authorId: senderId, originalText: text, createdAt: message!.createdAt, author: author! }, { id: senderId, tone: null }),
+    conversationId
   }
 }

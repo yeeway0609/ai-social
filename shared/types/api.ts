@@ -1,4 +1,5 @@
 import type { ContentKind, RewriteScale } from '../utils/content'
+import type { ToneId } from '../utils/tones'
 import type { SemanticSimilarityResult } from './semanticSimilarity'
 
 export interface UserSummary {
@@ -9,12 +10,12 @@ export interface UserSummary {
 
 /** 登入者本人；tone 為 null 代表尚未完成引導設定。 */
 export interface CurrentUser extends UserSummary {
-  tone: string | null
+  tone: ToneId | null
   onboardedAt: string | null
 }
 
 export interface SettingsUpdate {
-  tone: string
+  tone: ToneId
 }
 
 export interface LoginRequest {
@@ -32,7 +33,7 @@ export interface Rendition {
 
 /**
  * 他人的內容不帶原文，前端顯示 rendition，或透過「顯示原文」另外取得；
- * 自己的內容 originalText 直接給，因為作者永遠看原文。
+ * 自己的內容與尚未設定語氣的讀者 originalText 直接給。
  */
 export interface ContentSummary {
   id: string
@@ -91,7 +92,7 @@ export interface RenditionLookup {
 /** 預產單一語氣時的失敗分類；只在伺服器內部與 log 使用，讀者端看不到。 */
 export type RenditionError
   = | 'ai_unavailable'
-    | 'provider_error'
+    | 'model_error'
     | 'timeout'
     | 'invalid_model_output'
     | 'token_changed'

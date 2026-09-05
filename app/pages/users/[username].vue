@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { FetchError } from 'ofetch'
 
-const SKELETON_KEYS = ['a', 'b', 'c']
-
 const route = useRoute()
 const { user: currentUser } = useAuth()
 
@@ -80,20 +78,7 @@ const isOwnProfile = computed(() => !!profile.value && profile.value.id === curr
         />
       </div>
 
-      <template v-if="isLoadingFirstPage">
-        <div
-          v-for="key in SKELETON_KEYS"
-          :key="key"
-          class="flex gap-3 border-b border-default px-4 py-3"
-        >
-          <USkeleton class="size-10 shrink-0 rounded-full" />
-          <div class="flex-1 space-y-2 py-1">
-            <USkeleton class="h-4 w-1/3" />
-            <USkeleton class="h-4 w-full" />
-            <USkeleton class="h-4 w-4/5" />
-          </div>
-        </div>
-      </template>
+      <PostListSkeleton v-if="isLoadingFirstPage" />
 
       <p
         v-else-if="posts.length === 0"
@@ -114,15 +99,10 @@ const isOwnProfile = computed(() => !!profile.value && profile.value.id === curr
           ref="sentinel"
           class="flex justify-center py-6"
         >
-          <UIcon
-            v-if="isLoadingMore"
-            class="size-5 animate-spin text-muted"
-            name="i-mingcute-loading-3-line"
+          <FeedEndIndicator
+            :is-loading-more="isLoadingMore"
+            :has-more="hasMore"
           />
-          <span
-            v-else-if="!hasMore"
-            class="text-xs text-muted"
-          >沒有更多貼文了</span>
         </div>
       </template>
     </template>

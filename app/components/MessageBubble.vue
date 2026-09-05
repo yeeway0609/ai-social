@@ -2,17 +2,12 @@
 const props = withDefaults(defineProps<{
   message: MessageSummary
   /** 已送出但伺服器尚未回應的樂觀訊息。 */
-  isPending?: boolean
+  isSending?: boolean
   isFailed?: boolean
-}>(), { isPending: false, isFailed: false })
+}>(), { isSending: false, isFailed: false })
 
 const emit = defineEmits<{ retry: [] }>()
 
-/**
- * 樂觀訊息的 id 不是伺服器發的 uuid，丟給改寫服務會被拒；
- * 反正它一定是自己的訊息，直接顯示原文即可。
- */
-const isTemporary = computed(() => props.message.id.startsWith('temp-'))
 const clockTime = computed(() => formatClockTime(props.message.createdAt))
 </script>
 
@@ -36,17 +31,10 @@ const clockTime = computed(() => formatClockTime(props.message.createdAt))
         class="rounded-md px-3 py-2"
         :class="[
           message.isOwn ? 'rounded-br-none bg-primary text-inverted glow-primary-soft' : 'rounded-bl-none border border-accented bg-elevated',
-          isPending && 'opacity-70'
+          isSending && 'opacity-70'
         ]"
       >
-        <p
-          v-if="isTemporary"
-          class="whitespace-pre-wrap break-words text-sm leading-relaxed"
-        >
-          {{ message.originalText }}
-        </p>
         <ContentBody
-          v-else
           kind="message"
           :content="message"
           compact
@@ -65,7 +53,7 @@ const clockTime = computed(() => formatClockTime(props.message.createdAt))
       <span
         v-else
         class="px-1 font-mono text-[11px] text-muted"
-      >{{ isPending ? '傳送中…' : clockTime }}</span>
+      >{{ isSending ? '傳送中…' : clockTime }}</span>
     </div>
   </div>
 </template>

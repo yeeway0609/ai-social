@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 import { schema, useDb } from '../../../db'
-import { schedulePregeneration } from '../../../utils/ai/render'
+import { schedulePregeneration, toContentSummary } from '../../../utils/ai/render'
 import { requireUserId } from '../../../utils/session'
 import { userSummaryColumns } from '../../../utils/users'
 
@@ -25,13 +25,5 @@ export default defineEventHandler(async (event): Promise<CommentSummary> => {
 
   schedulePregeneration(event, 'comment', comment!.id)
   setResponseStatus(event, 201)
-  return {
-    id: comment!.id,
-    author: author!,
-    originalText: text,
-    isOwn: true,
-    createdAt: comment!.createdAt.toISOString(),
-    rendition: null,
-    isRenditionPending: false
-  }
+  return toContentSummary({ id: comment!.id, authorId, originalText: text, createdAt: comment!.createdAt, author: author! }, { id: authorId, tone: null })
 })

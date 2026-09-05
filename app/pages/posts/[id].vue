@@ -64,21 +64,15 @@ async function handleSubmitComment(text: string, done: (isSuccess: boolean) => v
       :actions="[{ label: '回動態牆', to: '/' }]"
     />
 
-    <div
+    <PostListSkeleton
       v-else-if="isLoadingPost"
-      class="flex gap-3 border-b border-default px-4 py-3"
-    >
-      <USkeleton class="size-10 shrink-0 rounded-full" />
-      <div class="flex-1 space-y-2 py-1">
-        <USkeleton class="h-4 w-1/3" />
-        <USkeleton class="h-4 w-full" />
-        <USkeleton class="h-4 w-4/5" />
-      </div>
-    </div>
+      :count="1"
+    />
 
     <template v-else-if="post">
       <PostCard
         :post="post"
+        detailed
         @liked="handleLiked"
         @deleted="handleDeletedPost"
       />

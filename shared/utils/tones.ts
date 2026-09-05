@@ -2,15 +2,7 @@
  * 預設語氣清單；讀者一定選其中一種，沒有「不改寫」這種選項，原文只透過顯示原文、
  * 自己的內容或改寫失敗出現。instruction 是交給模型的風格描述，清單內容改這裡即可。
  */
-export interface Tone {
-  id: string
-  label: string
-  description: string
-  sample: string
-  instruction: string
-}
-
-export const TONES: readonly Tone[] = [
+const TONE_DEFINITIONS = [
   {
     id: 'gentle_friendly',
     label: '溫和友善',
@@ -32,10 +24,26 @@ export const TONES: readonly Tone[] = [
     sample: '今天的會議效率不高。',
     instruction: '用清楚、簡潔、容易快速理解的語氣重述。刪去冗詞、重複與不必要的鋪陳，保留原文所有關鍵事實、數字、人物、立場與結論；不要摘要到失去重要資訊。'
   }
-]
+] as const
 
-export const TONE_IDS = TONES.map(tone => tone.id) as [string, ...string[]]
+export type ToneId = typeof TONE_DEFINITIONS[number]['id']
 
+export interface Tone {
+  id: ToneId
+  label: string
+  description: string
+  sample: string
+  instruction: string
+}
+
+export const TONES: readonly Tone[] = TONE_DEFINITIONS
+
+export const TONE_IDS = TONES.map(tone => tone.id) as [ToneId, ...ToneId[]]
+
+/** 引導設定表單預選的語氣。 */
+export const DEFAULT_TONE: Tone = TONES[0]!
+
+/** 資料庫存的是字串，值域外的舊值回 undefined，呼叫端一律當「沒有語氣」處理。 */
 export function findTone(id: string): Tone | undefined {
   return TONES.find(tone => tone.id === id)
 }

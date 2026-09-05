@@ -1,5 +1,9 @@
 <script setup lang="ts">
-const props = defineProps<{ post: PostSummary }>()
+const props = withDefaults(defineProps<{
+  post: PostSummary
+  /** 貼文頁才攤開語意相似度，列表只有幅度分級。 */
+  detailed?: boolean
+}>(), { detailed: false })
 const emit = defineEmits<{
   deleted: [id: string]
   liked: [result: LikeResult]
@@ -18,14 +22,6 @@ const isDeleting = ref(false)
 
 const postPath = computed(() => `/posts/${props.post.id}`)
 const authorPath = computed(() => `/users/${props.post.author.username}`)
-const menuItems = [{
-  label: '刪除',
-  icon: 'i-mingcute-delete-2-line',
-  color: 'error' as const,
-  onSelect: () => {
-    isVisibleDeleteModal.value = true
-  }
-}]
 
 watch(() => [props.post.isLiked, props.post.likeCount] as const, ([liked, count]) => {
   isLiked.value = liked
@@ -87,41 +83,18 @@ async function handleClickConfirmDelete() {
     </NuxtLink>
 
     <div class="min-w-0 flex-1">
-      <div class="flex items-start justify-between gap-2">
-        <div class="flex min-w-0 flex-wrap items-baseline gap-x-1.5 text-sm">
-          <NuxtLink
-            class="truncate font-semibold hover:underline"
-            :to="authorPath"
-          >
-            {{ post.author.displayName }}
-          </NuxtLink>
-          <span class="truncate font-mono text-xs text-muted">@{{ post.author.username }}</span>
-          <span class="text-muted">·</span>
-          <time
-            class="text-muted"
-            :datetime="post.createdAt"
-          >{{ formatRelativeTime(post.createdAt) }}</time>
-        </div>
-        <UDropdownMenu
-          v-if="post.isOwn"
-          :items="menuItems"
-          :content="{ align: 'end' }"
-        >
-          <UButton
-            class="-mr-2 -mt-1"
-            color="neutral"
-            variant="ghost"
-            size="xs"
-            icon="i-mingcute-more-1-line"
-            aria-label="更多"
-          />
-        </UDropdownMenu>
-      </div>
+      <AuthorLine
+        :author="post.author"
+        :created-at="post.createdAt"
+        :can-delete="post.isOwn"
+        @delete="isVisibleDeleteModal = true"
+      />
 
       <div class="mt-1">
         <ContentBody
           kind="post"
           :content="post"
+          :show-semantic-similarity="detailed"
         />
       </div>
 
@@ -165,28 +138,12 @@ async function handleClickConfirmDelete() {
       </div>
     </div>
 
-    <UModal
+    <DeleteConfirmModal
       v-model:open="isVisibleDeleteModal"
       title="刪除這則貼文？"
       description="貼文底下的留言與讚會一起刪除，無法復原。"
-    >
-      <template #footer="{ close }">
-        <div class="flex w-full justify-end gap-2">
-          <UButton
-            color="neutral"
-            variant="ghost"
-            label="取消"
-            :disabled="isDeleting"
-            @click="close"
-          />
-          <UButton
-            color="error"
-            label="刪除"
-            :loading="isDeleting"
-            @click="handleClickConfirmDelete"
-          />
-        </div>
-      </template>
-    </UModal>
+      :is-deleting="isDeleting"
+      @confirm="handleClickConfirmDelete"
+    />
   </article>
 </template>

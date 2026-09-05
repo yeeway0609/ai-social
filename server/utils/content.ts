@@ -8,10 +8,10 @@ export interface LoadedContent {
   createdAt: Date
 }
 
+/** 訊息的作者欄位叫 senderId、也沒有 authorId，所以另外查，不放進這張表。 */
 const TABLES = {
   post: schema.posts,
-  comment: schema.comments,
-  message: schema.messages
+  comment: schema.comments
 } as const
 
 /** 三種內容都只需要「誰寫的、寫了什麼」，改寫服務與顯示原文共用這一支。 */

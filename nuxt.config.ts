@@ -34,12 +34,12 @@ export default defineNuxtConfig({
     adminSecret: '',
 
     ai: {
+      // 逗號分隔多把金鑰輪替；單把的 nvidiaApiKey 仍相容
+      nvidiaApiKeys: '',
       nvidiaApiKey: '',
       model: 'nvidia/nemotron-3.5-lightning-30b-a3b',
       embeddingModel: 'nvidia/nemotron-3-embed-1b',
-      temperature: 1,
-      // 沒有金鑰時的本機替身：改寫只是在原文前加語氣標記，讓 UI 流程走得通
-      mock: false
+      temperature: 1
     },
 
     public: {
@@ -52,6 +52,13 @@ export default defineNuxtConfig({
   },
 
   compatibilityDate: '2025-01-15',
+
+  // 背景預產（waitUntil）跟著函式一起被砍，預設 10 秒不夠一次改寫加 embedding
+  nitro: {
+    vercel: {
+      functions: { maxDuration: 60 }
+    }
+  },
 
   eslint: {
     config: {
