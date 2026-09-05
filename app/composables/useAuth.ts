@@ -1,10 +1,12 @@
 /** 跨元件共享的登入者狀態；null 代表未登入、undefined 代表尚未查詢。 */
 export function useAuth() {
   const user = useState<CurrentUser | null | undefined>('auth-user', () => undefined)
+  // 整頁載入時 fetchMe 在伺服器端執行，一般 $fetch 不會轉送瀏覽器的 cookie，會被誤判成未登入
+  const requestFetch = useRequestFetch()
 
   async function fetchMe() {
     try {
-      user.value = await $fetch<CurrentUser>('/api/me')
+      user.value = await requestFetch<CurrentUser>('/api/me')
     } catch {
       user.value = null
     }
