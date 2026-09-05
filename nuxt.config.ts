@@ -42,9 +42,6 @@ export default defineNuxtConfig({
       mock: false
     },
 
-    // 預產改寫的管理端點用；空字串代表端點關閉
-    adminSecret: '',
-
     public: {
       environment: 'local'
     }

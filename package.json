@@ -16,7 +16,8 @@
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "db:seed": "node --env-file=.env scripts/seed.ts",
-    "prerender": "node --env-file=.env scripts/prerender.ts"
+    "prerender": "node --env-file=.env scripts/prerender.ts",
+    "db:seed-renditions": "node --env-file=.env scripts/seed-renditions.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.123.0",
@@ -32,6 +33,7 @@
     "zod": "^4.5.4"
   },
   "devDependencies": {
+    "@iconify-json/mingcute": "^1.2.8",
     "@nuxt/eslint": "^1.15.2",
     "drizzle-kit": "^0.31.10",
     "eslint": "^10.4.1",
