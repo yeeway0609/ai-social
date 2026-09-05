@@ -2,7 +2,7 @@
 import { FetchError } from 'ofetch'
 
 const route = useRoute()
-const { user: currentUser } = useAuth()
+const { user: currentUser, logout } = useAuth()
 
 const username = route.params.username as string
 
@@ -57,9 +57,9 @@ const isOwnProfile = computed(() => !!profile.value && profile.value.id === curr
           color="neutral"
           variant="outline"
           size="sm"
-          icon="i-mingcute-settings-3-line"
-          label="設定"
-          to="/settings"
+          icon="i-mingcute-exit-door-line"
+          label="登出"
+          @click="logout"
         />
       </header>
 
