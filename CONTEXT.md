@@ -41,9 +41,9 @@
 
 ### 改寫（rendition）
 
-一則內容（貼文、留言、訊息）在某位讀者的語氣設定下的 AI 產出結果。它是衍生資料，目前不落地，每次呼叫重算。
+一則內容（貼文、留言、訊息）在某個語氣（與自訂指示）下的 AI 產出結果。預設語氣的改寫全站共用並存進資料庫；自訂指示的改寫以指示雜湊另存。
 
-- 識別碼：`RenditionResult`、`renderContent()`
+- 識別碼：`renditions` 資料表、`RenditionResult`、`renderContent()`、`pregenerateRenditions()`
 - 避免：「翻譯」（會誤導成語言轉換）、「潤稿」（暗示原文有瑕疵）、「版本」（`revision` 另指編輯歷史，本專案沒有這概念）
 
 ### 改寫幅度

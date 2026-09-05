@@ -1,10 +1,10 @@
 ---
 id: TASK-001
 title: 決策：改寫結果是每位讀者各自產生，還是同一語氣所有讀者共用一份
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-09-04 17:54'
-updated_date: '2026-09-04 18:10'
+updated_date: '2026-09-05 03:13'
 labels:
   - spec
   - backend
@@ -39,13 +39,15 @@ ordinal: 1000
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 與隊友討論後選定方案，建立 accepted decision（ADR 三段式）
-- [ ] #2 決策結論整合回語氣改寫引擎 PRD 的需求細節與流程圖
-- [ ] #3 決策明確寫出快取鍵的組成與自訂語氣指示的處置
+- [x] #1 與隊友討論後選定方案，建立 accepted decision（ADR 三段式）
+- [x] #2 決策結論整合回語氣改寫引擎 PRD 的需求細節與流程圖
+- [x] #3 決策明確寫出快取鍵的組成與自訂語氣指示的處置
 <!-- AC:END -->
 
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
 補充（Q24）：改寫觸發時機也屬於本決策。若改成「發文時在後端預先產生」，讀者端的並發限制（同時最多 3 個改寫請求）就不需要，但會回到方案 2 的成本模型與自訂指示問題；若維持「讀者捲到附近才改寫」，並發限制要保留。
+
+已拍板，見 decision-011；結論整合回 doc-002。
 <!-- SECTION:NOTES:END -->

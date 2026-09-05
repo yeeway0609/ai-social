@@ -1,9 +1,10 @@
 ---
 id: TASK-003
 title: 決策：自訂語氣指示與預設語氣的組合方式及其邊界
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-09-04 18:10'
+updated_date: '2026-09-05 03:13'
 labels:
   - spec
   - backend
@@ -30,6 +31,12 @@ ordinal: 3000
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 選定組合方式，建立 accepted decision 並更新語氣改寫引擎 PRD
-- [ ] #2 明訂自訂指示與不變量衝突時的處置，寫進 PRD 改寫不變量章節
+- [x] #1 選定組合方式，建立 accepted decision 並更新語氣改寫引擎 PRD
+- [x] #2 明訂自訂指示與不變量衝突時的處置，寫進 PRD 改寫不變量章節
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+已拍板，見 decision-012；結論整合回 doc-002。
+<!-- SECTION:NOTES:END -->

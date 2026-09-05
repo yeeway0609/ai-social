@@ -1,9 +1,10 @@
 ---
 id: TASK-004
 title: 決策：情緒是否成為語氣以外的第二個改寫維度
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-09-04 18:10'
+updated_date: '2026-09-05 03:13'
 labels:
   - spec
   - backend
@@ -27,6 +28,12 @@ ordinal: 4000
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 拍板是否新增情緒維度及其值域，建立 decision 並更新語氣改寫引擎 PRD 的語氣設定與流程圖
-- [ ] #2 若採用，引導設定頁的問題項目同步更新到總覽 PRD
+- [x] #1 拍板是否新增情緒維度及其值域，建立 decision 並更新語氣改寫引擎 PRD 的語氣設定與流程圖
+- [x] #2 若採用，引導設定頁的問題項目同步更新到總覽 PRD
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+已拍板，見 decision-013；結論整合回 doc-002。
+<!-- SECTION:NOTES:END -->
