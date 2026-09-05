@@ -51,11 +51,30 @@ const openrouter: RewriteFn = async ({ apiKey, model, system, original, timeoutM
   return response.choices[0]?.message.content?.trim() ?? ''
 }
 
-export const REWRITE_FNS: Record<AiProvider, RewriteFn> = { anthropic, openai, openrouter }
+/**
+ * 自架模型（例如 Qwen3）走 OpenAI Responses 相容端點。
+ * Qwen3 這類有思考模式的模型可能把 <think> 段落夾在輸出裡，改寫只要最後的正文。
+ */
+const local: RewriteFn = async ({ apiKey, model, system, original, timeoutMs }) => {
+  const { ai } = useRuntimeConfig()
+  if (!ai.localBaseUrl) throw new Error('NUXT_AI_LOCAL_BASE_URL 未設定')
+  const response = await new OpenAI({ apiKey, baseURL: ai.localBaseUrl, timeout: timeoutMs, maxRetries: 0 }).responses.create({
+    model,
+    instructions: system,
+    input: original
+  })
+  return stripThinking(response.output_text)
+}
+
+function stripThinking(text: string) {
+  return text.replace(/<think>[\s\S]*?<\/think>/g, '').trim()
+}
+
+export const REWRITE_FNS: Record<AiProvider, RewriteFn> = { anthropic, openai, openrouter, local }
 
 export function modelFor(provider: AiProvider) {
   const { ai } = useRuntimeConfig()
-  return { anthropic: ai.modelAnthropic, openai: ai.modelOpenai, openrouter: ai.modelOpenrouter }[provider]
+  return { anthropic: ai.modelAnthropic, openai: ai.modelOpenai, openrouter: ai.modelOpenrouter, local: ai.modelLocal }[provider]
 }
 
 /** SDK 的逾時與額度錯誤各自對應不同的前端處置（重試 vs 導去設定金鑰），所以分開辨識。 */
