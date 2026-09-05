@@ -111,13 +111,14 @@ async function handleClickConfirmDelete() {
           />
         </div>
 
-        <div class="-ml-2 mt-2 flex items-center gap-1">
+        <!-- 兩顆圖示都放在 slot 裡用同一個尺寸畫，不用 icon 屬性，免得吃到按鈕尺寸的預設圖示大小 -->
+        <div class="-ml-1.5 mt-2 flex items-center gap-1.5">
           <UButton
+            class="px-1.5 transition-transform duration-(--duration-fast) active:scale-90"
+            :class="isLiked ? 'text-pulse' : 'text-muted hover:text-pulse'"
             color="neutral"
             variant="ghost"
             size="sm"
-            class="active:scale-90 transition-transform duration-(--duration-fast)"
-            :class="isLiked ? 'text-pulse' : 'text-muted hover:text-pulse'"
             :aria-label="isLiked ? '收回讚' : '按讚'"
             :aria-pressed="isLiked"
             @click="handleClickLike"
@@ -128,10 +129,12 @@ async function handleClickConfirmDelete() {
               :class="isHeartBursting && 'animate-heart-burst'"
               @animationend="isHeartBursting = false"
             />
-            <span class="relative inline-grid min-w-[1ch] tabular-nums">
+            <span
+              v-if="likeCount"
+              class="relative inline-grid tabular-nums"
+            >
               <Transition name="swap">
                 <span
-                  v-if="likeCount"
                   :key="likeCount"
                   class="col-start-1 row-start-1"
                 >{{ likeCount }}</span>
@@ -139,15 +142,22 @@ async function handleClickConfirmDelete() {
             </span>
           </UButton>
           <UButton
-            class="text-muted transition-transform duration-(--duration-fast) hover:text-primary active:scale-90"
+            class="px-1.5 text-muted transition-transform duration-(--duration-fast) hover:text-primary active:scale-90"
             color="neutral"
             variant="ghost"
             size="sm"
-            icon="i-mingcute-chat-2-line"
-            :label="post.commentCount ? String(post.commentCount) : undefined"
             aria-label="留言"
             :to="postPath"
-          />
+          >
+            <UIcon
+              name="i-mingcute-chat-2-line"
+              class="size-5 shrink-0"
+            />
+            <span
+              v-if="post.commentCount"
+              class="tabular-nums"
+            >{{ post.commentCount }}</span>
+          </UButton>
         </div>
       </div>
     </div>
