@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-04 18:28'
-updated_date: '2026-09-05 08:00'
+updated_date: '2026-09-05 08:02'
 labels:
   - backend
   - frontend
@@ -57,4 +57,6 @@ ordinal: 8000
 依賴下載重試結果：pnpm install --frozen-lockfile 下載了部分套件，但 43 個 lockfile entries 違反 minimumReleaseAge policy；後續 lint/typecheck 又因 registry ENOTFOUND 進入補裝重試，已中止。node_modules/.bin 尚未建立。真實資料庫套用結果：本機沒有 .env，shell 沒有 DATABASE_URL，且沒有 psql；目前無可用 DB 連線，未套用 migration。
 
 可執行的純 Node 驗證通過：node --test tests/renderContract.test.mjs tests/semanticSimilarity.test.mjs tests/outputValidation.test.mjs tests/semanticSimilarityCalibration.test.mjs，共 19 項通過。
+
+GitHub Actions 驗證通過：CI run 33954134974 於 dev 上完成，pnpm install --frozen-lockfile、pnpm lint、pnpm typecheck 皆通過。
 <!-- SECTION:NOTES:END -->
