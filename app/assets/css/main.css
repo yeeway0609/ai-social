@@ -171,6 +171,15 @@ body::after {
   transform: scale(0.98);
 }
 
+/* 貼文與留言之間的串接線：從頭像底下一路畫到這格底部，接上下一則的頭像 */
+@utility thread-line {
+  margin-top: 0.5rem;
+  width: 2px;
+  flex: 1;
+  border-radius: 9999px;
+  background: var(--ui-bg-accented);
+}
+
 /* 改寫中的三點指示：三顆點輪流由灰轉粉並微微跳起，錯開起跑時間形成波浪 */
 .typing-dots {
   display: inline-flex;

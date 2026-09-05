@@ -73,24 +73,23 @@ async function handleSubmitComment(text: string, done: (isSuccess: boolean) => v
       <PostCard
         :post="post"
         detailed
+        :has-replies-below="comments.length > 0"
         @liked="handleLiked"
         @deleted="handleDeletedPost"
       />
 
       <section class="pb-4">
-        <h2 class="px-4 pt-4 text-sm font-medium text-muted">
-          留言
-        </h2>
         <TransitionGroup
           v-if="comments.length"
           name="list"
           tag="ul"
-          class="relative divide-y divide-default"
+          class="relative"
         >
           <CommentItem
-            v-for="comment in comments"
+            v-for="(comment, index) in comments"
             :key="comment.id"
             :comment="comment"
+            :has-thread-line="index < comments.length - 1"
             @deleted="handleDeletedComment"
           />
         </TransitionGroup>
@@ -101,8 +100,6 @@ async function handleSubmitComment(text: string, done: (isSuccess: boolean) => v
           還沒有留言
         </p>
       </section>
-
-      <USeparator />
 
       <div class="px-4 py-4">
         <TextComposer

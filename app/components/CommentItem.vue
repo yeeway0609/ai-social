@@ -1,5 +1,9 @@
 <script setup lang="ts">
-const props = defineProps<{ comment: CommentSummary }>()
+const props = withDefaults(defineProps<{
+  comment: CommentSummary
+  /** 不是最後一則時，頭像下方的串接線要接到下一則留言。 */
+  hasThreadLine?: boolean
+}>(), { hasThreadLine: false })
 const emit = defineEmits<{ deleted: [id: string] }>()
 
 const toast = useToast()
@@ -25,16 +29,23 @@ async function handleClickConfirmDelete() {
 
 <template>
   <li class="flex gap-3 px-4 py-3">
-    <NuxtLink
-      class="shrink-0"
-      :to="authorPath"
-      :aria-label="comment.author.displayName"
-    >
-      <UserAvatar
-        :user="comment.author"
-        size="sm"
+    <!-- 留言頭像較小，外框撐到和貼文頭像同寬，串接線才會對齊 -->
+    <div class="flex w-10 shrink-0 flex-col items-center">
+      <NuxtLink
+        :to="authorPath"
+        :aria-label="comment.author.displayName"
+      >
+        <UserAvatar
+          :user="comment.author"
+          size="sm"
+        />
+      </NuxtLink>
+      <span
+        v-if="hasThreadLine"
+        class="thread-line"
+        aria-hidden="true"
       />
-    </NuxtLink>
+    </div>
 
     <div class="min-w-0 flex-1">
       <AuthorLine

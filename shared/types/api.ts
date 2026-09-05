@@ -47,13 +47,15 @@ export interface ContentSummary {
   isRenditionPending: boolean
 }
 
+export type CommentSummary = ContentSummary
+
 export interface PostSummary extends ContentSummary {
   likeCount: number
   commentCount: number
   isLiked: boolean
+  /** 列表上串在貼文底下的第一則留言預覽；沒有留言為 null。 */
+  firstComment: CommentSummary | null
 }
-
-export type CommentSummary = ContentSummary
 
 export interface MessageSummary extends ContentSummary {
   conversationId: string
