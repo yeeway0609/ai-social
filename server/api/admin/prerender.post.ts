@@ -2,13 +2,14 @@ import { and, eq, isNull, ne } from 'drizzle-orm'
 import { z } from 'zod'
 import { schema, useDb } from '../../db'
 import { pregenerateRenditions } from '../../utils/ai/render'
+import { getUserByUsername } from '../../utils/users'
 import { secretEquals } from '../../utils/crypto'
 
 const body = z.object({
   /** 一次最多處理幾則內容；預產是逐則五個語氣，量大時分批跑避免撞函式時限。 */
   limit: z.number().int().min(1).max(200).default(50),
   /** 用這個帳號的自備金鑰產所有內容；不給就用各作者自己的金鑰、其次共用池。 */
-  asHandle: z.string().trim().min(1).optional()
+  asUsername: z.string().trim().min(1).optional()
 })
 
 /**
@@ -22,12 +23,12 @@ export default defineEventHandler(async (event) => {
   if (!secret || !provided || !secretEquals(provided, secret)) {
     throw createError({ statusCode: 404, statusMessage: 'not_found' })
   }
-  const { limit, asHandle } = body.parse((await readBody(event).catch(() => null)) ?? {})
+  const { limit, asUsername } = body.parse((await readBody(event).catch(() => null)) ?? {})
   const db = useDb()
 
   let credentialUserId: string | undefined
-  if (asHandle) {
-    const [user] = await db.select({ id: schema.users.id }).from(schema.users).where(eq(schema.users.handle, asHandle.toLowerCase())).limit(1)
+  if (asUsername) {
+    const user = await getUserByUsername(asUsername.toLowerCase())
     if (!user) throw createError({ statusCode: 404, statusMessage: 'user_not_found' })
     credentialUserId = user.id
   }
