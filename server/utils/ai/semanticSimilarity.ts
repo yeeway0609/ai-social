@@ -78,7 +78,7 @@ export async function measureSemanticSimilarity(
       method: 'POST',
       // 不跟隨重新導向，避免文字與金鑰被送往非預期端點。
       redirect: 'error',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${input.apiKey}` },
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${input.apiKey}` },
       body: JSON.stringify({ model, input: [original, rewritten], encoding_format: 'float' }),
       signal
     })

@@ -1,7 +1,7 @@
 export const SEMANTIC_SIMILARITY_VERSION = 'cosine-nfc-v1'
 
-export type SemanticSimilarityError =
-  | 'invalid_input'
+export type SemanticSimilarityError
+  = | 'invalid_input'
   | 'no_embedding_credential'
   | 'embedding_authentication_failed'
   | 'embedding_rate_limited'

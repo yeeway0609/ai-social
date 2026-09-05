@@ -88,8 +88,8 @@ export interface RenditionResult {
   error: RenditionError | null
 }
 
-export type RenditionError =
-  | 'no_ai_credential'
+export type RenditionError
+  = | 'no_ai_credential'
   | 'provider_authentication_failed'
   | 'provider_rate_limited'
   | 'provider_error'

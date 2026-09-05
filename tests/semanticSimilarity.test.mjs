@@ -39,7 +39,9 @@ test('同一請求送出兩段文字，依 index 讀取向量並回傳模型版�
 })
 
 test('空文字、無金鑰與無效逾時設定不發送請求', async () => {
-  const never = async () => { assert.fail('不應呼叫 API') }
+  const never = async () => {
+    assert.fail('不應呼叫 API')
+  }
   for (const patch of [{ originalText: ' ' }, { rewrittenText: '' }, { timeoutMs: 0 }, { timeoutMs: 30001 }, { model: '' }]) {
     assert.equal((await measureSemanticSimilarity({ ...input, ...patch }, never)).error, 'invalid_input')
   }
@@ -67,7 +69,9 @@ test('驗證失敗、限流與服務錯誤分流且不重試', async () => {
 
 test('無效 JSON 與網路錯誤不洩漏內容', async () => {
   assert.equal((await measureSemanticSimilarity(input, async () => new Response('not-json'))).error, 'invalid_embedding_output')
-  const result = await measureSemanticSimilarity(input, async () => { throw new Error('sensitive-request') })
+  const result = await measureSemanticSimilarity(input, async () => {
+    throw new Error('sensitive-request')
+  })
   assert.deepEqual(result, { status: 'unavailable', score: null, error: 'embedding_provider_error' })
 })
 
@@ -75,7 +79,10 @@ test('逾時中止請求且回傳無分數', async () => {
   const result = await measureSemanticSimilarity({ ...input, timeoutMs: 5 }, async (_url, options) => {
     await new Promise((resolve, reject) => {
       const timer = setTimeout(resolve, 1000)
-      options.signal.addEventListener('abort', () => { clearTimeout(timer); reject(options.signal.reason) }, { once: true })
+      options.signal.addEventListener('abort', () => {
+        clearTimeout(timer)
+        reject(options.signal.reason)
+      }, { once: true })
     })
     return Response.json(payload())
   })

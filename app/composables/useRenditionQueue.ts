@@ -54,7 +54,10 @@ export function useRenditionQueue() {
 
   function render(request: RenderRequest, options: { refresh?: boolean } = {}): Promise<RenditionResult> {
     const key = cacheKey(request)
-    if (options.refresh) delete cache.value[key]
+    if (options.refresh) {
+      const { [key]: _removed, ...nextCache } = cache.value
+      cache.value = nextCache
+    }
     const cached = cache.value[key]
     if (cached) return Promise.resolve(cached)
 
