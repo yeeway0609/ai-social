@@ -83,10 +83,16 @@ async function handleClickConversation(row: ConversationSummary) {
         >
           <UserAvatar :user="row.other" />
           <div class="min-w-0 flex-1">
-            <p class="truncate font-medium">
+            <p
+              class="truncate"
+              :class="row.unreadCount > 0 ? 'font-semibold' : 'font-medium'"
+            >
               {{ row.other.displayName }}
             </p>
-            <p class="truncate text-sm text-muted">
+            <p
+              class="truncate text-sm"
+              :class="row.unreadCount > 0 ? 'font-medium text-default' : 'text-muted'"
+            >
               {{ previewText(row) ?? `@${row.other.username}` }}
             </p>
           </div>
@@ -95,12 +101,24 @@ async function handleClickConversation(row: ConversationSummary) {
             name="i-mingcute-loading-3-line"
             class="size-4 animate-spin text-muted"
           />
-          <span
+          <div
             v-else-if="row.lastMessageAt"
-            class="shrink-0 text-xs text-muted"
+            class="flex shrink-0 flex-col items-end gap-1"
           >
-            {{ formatRelativeTime(row.lastMessageAt) }}
-          </span>
+            <span
+              class="text-xs"
+              :class="row.unreadCount > 0 ? 'font-medium text-primary' : 'text-muted'"
+            >
+              {{ formatRelativeTime(row.lastMessageAt) }}
+            </span>
+            <span
+              v-if="row.unreadCount > 0"
+              class="flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-xs font-semibold leading-none text-white"
+              :aria-label="`${row.unreadCount} 則未讀`"
+            >
+              {{ row.unreadCount > 99 ? '99+' : row.unreadCount }}
+            </span>
+          </div>
         </button>
       </li>
     </ul>

@@ -15,6 +15,13 @@
       "when": 1788600000000,
       "tag": "0001_drop_custom_instruction",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1788629460264,
+      "tag": "0002_add_conversation_reads",
+      "breakpoints": true
     }
   ]
 }

@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, gt, inArray, ne, or, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, gt, inArray, isNull, ne, or, sql } from 'drizzle-orm'
 import { schema, useDb } from '../db'
 import { getViewer, renditionColumns, renditionJoin, toContentSummary, type Viewer } from './ai/render'
 import { userSummaryColumns } from './users'
@@ -60,7 +60,41 @@ async function fetchLastMessages(viewer: Viewer, conversationIds: string[]): Pro
   return new Map(rows.map(row => [row.conversationId, { ...toContentSummary(row, viewer), conversationId: row.conversationId }]))
 }
 
-/** 每位其他使用者一列，不論聊過沒有；預覽用的最後一則訊息另外一次查完。 */
+/**
+ * 每個對話裡對方在讀者上次讀到之後送出的訊息數；沒有閱讀紀錄就整段都算未讀。
+ * 自己送出的訊息不算，因為送出當下一定看得到。
+ */
+async function fetchUnreadCounts(viewerId: string, conversationIds: string[]): Promise<Map<string, number>> {
+  if (conversationIds.length === 0) return new Map()
+  const rows = await useDb()
+    .select({
+      conversationId: schema.messages.conversationId,
+      unreadCount: sql<number>`count(*)::int`
+    })
+    .from(schema.messages)
+    .leftJoin(schema.conversationReads, and(
+      eq(schema.conversationReads.conversationId, schema.messages.conversationId),
+      eq(schema.conversationReads.userId, viewerId)
+    ))
+    .where(and(
+      inArray(schema.messages.conversationId, conversationIds),
+      ne(schema.messages.senderId, viewerId),
+      or(isNull(schema.conversationReads.lastReadAt), gt(schema.messages.createdAt, schema.conversationReads.lastReadAt))
+    ))
+    .groupBy(schema.messages.conversationId)
+  return new Map(rows.map(row => [row.conversationId, row.unreadCount]))
+}
+
+/** 讀者開著對話頁時呼叫；同一列重複寫只是把時間往後推，沒有併發問題。 */
+export async function markConversationRead(conversationId: string, viewerId: string) {
+  const now = new Date()
+  await useDb()
+    .insert(schema.conversationReads)
+    .values({ conversationId, userId: viewerId, lastReadAt: now })
+    .onConflictDoUpdate({ target: [schema.conversationReads.conversationId, schema.conversationReads.userId], set: { lastReadAt: now } })
+}
+
+/** 每位其他使用者一列，不論聊過沒有；預覽用的最後一則訊息與未讀數另外各一次查完。 */
 export async function listConversations(viewerId: string): Promise<ConversationSummary[]> {
   const rows = await useDb()
     .select({
@@ -77,13 +111,15 @@ export async function listConversations(viewerId: string): Promise<ConversationS
     .orderBy(sql`${schema.conversations.lastMessageAt} desc nulls last`, schema.users.displayName)
 
   const viewer = await getViewer(viewerId)
-  const lastMessages = await fetchLastMessages(viewer, rows.flatMap(row => row.conversationId ? [row.conversationId] : []))
+  const conversationIds = rows.flatMap(row => row.conversationId ? [row.conversationId] : [])
+  const [lastMessages, unreadCounts] = await Promise.all([fetchLastMessages(viewer, conversationIds), fetchUnreadCounts(viewerId, conversationIds)])
 
   return rows.map(row => ({
     other: row.other,
     conversationId: row.conversationId,
     lastMessageAt: row.lastMessageAt?.toISOString() ?? null,
-    lastMessage: row.conversationId ? lastMessages.get(row.conversationId) ?? null : null
+    lastMessage: row.conversationId ? lastMessages.get(row.conversationId) ?? null : null,
+    unreadCount: row.conversationId ? unreadCounts.get(row.conversationId) ?? 0 : 0
   }))
 }
 

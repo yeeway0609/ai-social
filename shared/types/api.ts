@@ -82,6 +82,8 @@ export interface ConversationSummary {
   lastMessageAt: string | null
   /** 最後一則訊息，供列表預覽；和對話內一樣帶讀者語氣的改寫。沒聊過為 null。 */
   lastMessage: MessageSummary | null
+  /** 對方在讀者上次開啟對話之後送出的訊息數；沒聊過或都讀過為 0。 */
+  unreadCount: number
 }
 
 /** 預產尚未完成時前端輪詢用；改寫仍缺且已不在等待期，就附上原文讓前端直接顯示。 */
