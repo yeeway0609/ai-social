@@ -101,6 +101,10 @@ export type RenditionError
     | 'invalid_model_output'
     | 'token_changed'
     | 'output_too_long'
+    | 'perspective_changed'
+    | 'content_dropped'
+    | 'sample_leaked'
+    | 'meta_description'
     | 'semantic_similarity_unavailable'
     | 'semantic_similarity_too_low'
 

@@ -42,7 +42,7 @@ export default defineNuxtConfig({
       nvidiaApiKey: '',
       model: 'nvidia/nemotron-3.5-lightning-30b-a3b',
       embeddingModel: 'nvidia/nemotron-3-embed-1b',
-      temperature: 1
+      temperature: 0.3
     },
 
     public: {

@@ -4,6 +4,7 @@ import type { H3Event } from 'h3'
 import { schema, useDb } from '../../db'
 import { loadContent, type LoadedContent } from '../content'
 import { InvalidRenditionError, InvalidSemanticSimilarityError, isSemanticallySameAsOriginal, validateRenditionText, validateSemanticSimilarityForRendition } from './outputValidation'
+import { hasRewritableContent } from './textShape'
 import { NVIDIA_BASE_URL, classifyRewriteError, nvidiaApiKeys, rewrite } from './nvidia'
 import { buildSystemPrompt, parseToneOutputs, wrapOriginal } from './prompt'
 import { measureRewriteScale } from './scale'
@@ -155,12 +156,12 @@ async function measureGeneratedSimilarities(content: LoadedContent, texts: strin
  * 一次模型呼叫產出所有目標語氣。回傳每個語氣的結果：成功是 Rendition、失敗是錯誤碼。
  * 整批呼叫失敗（逾時、金鑰、限流）時每個語氣都拿到同一個錯誤碼。
  */
-async function generateAll(content: LoadedContent, tones: readonly Tone[]): Promise<Map<string, GeneratedToneResult>> {
+async function generateAll(kind: ContentKind, content: LoadedContent, tones: readonly Tone[]): Promise<Map<string, GeneratedToneResult>> {
   const results = new Map<string, GeneratedToneResult>()
 
   let raw: string
   try {
-    raw = await rewrite({ system: buildSystemPrompt(tones), original: wrapOriginal(content.originalText), timeoutMs: RENDER_TIMEOUT_MS })
+    raw = await rewrite({ system: buildSystemPrompt(tones, kind, content.originalText), original: wrapOriginal(content.originalText), timeoutMs: RENDER_TIMEOUT_MS })
   } catch (err) {
     const code = classifyRewriteError(err)
     for (const tone of tones) results.set(tone.id, code)
@@ -176,7 +177,7 @@ async function generateAll(content: LoadedContent, tones: readonly Tone[]): Prom
       continue
     }
     try {
-      validateRenditionText(content.originalText, text)
+      validateRenditionText(content.originalText, text, tone)
       valid.push({ tone, text })
     } catch (err) {
       if (!(err instanceof InvalidRenditionError)) throw err
@@ -205,14 +206,33 @@ async function generateAll(content: LoadedContent, tones: readonly Tone[]): Prom
 }
 
 /**
+ * 短內容不改寫時存的那一列：文字就是原文，相似度依定義為 1，讀取端走「等同原文」的路徑顯示原文、
+ * 不再進入預產中的等待，補跑也不會再打模型。model 記 identity 表明這個分數沒跑 embedding。
+ */
+function identityRendition(kind: ContentKind, contentId: string, tone: Tone, originalText: string): typeof schema.renditions.$inferInsert {
+  return {
+    kind,
+    contentId,
+    tone: tone.id,
+    text: originalText,
+    scale: 'nearly_original',
+    semanticSimilarityScore: 1,
+    semanticSimilarityModel: 'identity',
+    semanticSimilarityVersion: 'cosine-nfc-v1',
+    semanticSimilarityError: null
+  }
+}
+
+/**
  * 改寫只在這裡產生：內容寫入後對所有預設語氣各存一份，讀者之後直接撈、不再呼叫模型。
  * 貼文、留言、訊息一視同仁全語氣預產，讀者事後換語氣也有東西看。
  * 一則內容只打一次模型、一次 embedding，避免撞到 NIM 的每分鐘請求上限。
  * 已有的語氣略過，所以補跑是安全的；失敗的語氣留空，讀者看到原文。
+ * 沒有命題可改的短內容（純感嘆、表情、幾個字）不叫模型，直接以原文落地，讀者立刻看到標「原文」的原句。
  */
 export async function pregenerateRenditions(kind: ContentKind, id: string) {
   const content = await loadContent(kind, id)
-  if (!content) return { generated: 0, failed: 0 }
+  if (!content) return { generated: 0, failed: 0, skipped: 0 }
 
   const existing = await useDb()
     .select({ tone: schema.renditions.tone })
@@ -220,9 +240,14 @@ export async function pregenerateRenditions(kind: ContentKind, id: string) {
     .where(and(eq(schema.renditions.kind, kind), eq(schema.renditions.contentId, id)))
   const existingTones = new Set(existing.map(row => row.tone))
   const targets = TONES.filter(tone => !existingTones.has(tone.id))
-  if (targets.length === 0) return { generated: 0, failed: 0 }
+  if (targets.length === 0) return { generated: 0, failed: 0, skipped: 0 }
 
-  const results = await generateAll(content, targets)
+  if (!hasRewritableContent(content.originalText)) {
+    await useDb().insert(schema.renditions).values(targets.map(tone => identityRendition(kind, id, tone, content.originalText))).onConflictDoNothing()
+    return { generated: 0, failed: 0, skipped: targets.length }
+  }
+
+  const results = await generateAll(kind, content, targets)
   let generated = 0
   let failed = 0
   for (const tone of targets) {
@@ -240,7 +265,7 @@ export async function pregenerateRenditions(kind: ContentKind, id: string) {
       .onConflictDoNothing()
     generated++
   }
-  return { generated, failed }
+  return { generated, failed, skipped: 0 }
 }
 
 /** 寫入端點用：回應先送出，預產在背景跑；平台不支援 waitUntil 時退回同步等待。 */

@@ -54,8 +54,9 @@ export async function rewrite(args: { system: string, original: string, timeoutM
     .chat.completions.create({
       model: ai.model,
       messages: [{ role: 'system', content: args.system }, { role: 'user', content: args.original }],
+      // 忠實改寫不需要花樣：temperature 預設 0.3、top_p 0.9，抽樣太散就會開始轉述與捏造
       temperature: ai.temperature,
-      top_p: 0.95,
+      top_p: 0.9,
       max_tokens: DEFAULT_MAX_OUTPUT_TOKENS,
       stream: false,
       // chat_template_kwargs 是 NIM 專屬參數，OpenAI SDK 的型別沒有列，用斷言繞過多餘屬性檢查

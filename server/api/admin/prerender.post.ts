@@ -54,6 +54,7 @@ export default defineEventHandler(async (event) => {
   const processed: Record<ContentKind, number> = { post: 0, comment: 0, message: 0 }
   let generated = 0
   let failed = 0
+  let skipped = 0
   let remaining = limit
   for (const kind of CONTENT_KINDS) {
     const ids = await listContentIdsMissingAnyTone(kind, remaining)
@@ -64,8 +65,9 @@ export default defineEventHandler(async (event) => {
       const result = await pregenerateRenditions(kind, id)
       generated += result.generated
       failed += result.failed
+      skipped += result.skipped
     }
   }
 
-  return { processedPosts: processed.post, processedComments: processed.comment, processedMessages: processed.message, generated, failed }
+  return { processedPosts: processed.post, processedComments: processed.comment, processedMessages: processed.message, generated, failed, skipped }
 })
