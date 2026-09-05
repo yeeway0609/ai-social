@@ -90,13 +90,13 @@ export interface RenditionResult {
 
 export type RenditionError
   = | 'no_ai_credential'
-  | 'provider_authentication_failed'
-  | 'provider_rate_limited'
-  | 'provider_error'
-  | 'timeout'
-  | 'invalid_model_output'
-  | 'token_changed'
-  | 'output_too_long'
+    | 'provider_authentication_failed'
+    | 'provider_rate_limited'
+    | 'provider_error'
+    | 'timeout'
+    | 'invalid_model_output'
+    | 'token_changed'
+    | 'output_too_long'
 
 export interface OriginalResult {
   kind: ContentKind
