@@ -16,7 +16,7 @@ export default defineNuxtConfig({
       htmlAttrs: { lang: 'zh-Hant-TW' },
       meta: [
         { name: 'viewport', content: 'width=device-width, initial-scale=1, viewport-fit=cover' },
-        { name: 'theme-color', content: '#141414' }
+        { name: 'theme-color', content: '#ffffff' }
       ],
       link: [{ rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' }]
     }
@@ -24,11 +24,9 @@ export default defineNuxtConfig({
 
   css: ['~/assets/css/main.css'],
 
-  // 視覺語言固定為墨黑底，不跟隨系統
   colorMode: {
-    preference: 'dark',
-    fallback: 'dark',
-    storageKey: 'ai-social-color-mode'
+    preference: 'light',
+    fallback: 'light'
   },
 
   runtimeConfig: {

@@ -1,7 +1,7 @@
 @import "tailwindcss";
 @import "@nuxt/ui";
 
-/* 視覺語言：墨黑、骨白、粉彩天藍、髮絲線、直角 */
+/* 視覺語言：純白底、墨黑字、粉紅、髮絲線、直角 */
 @theme {
   --font-sans: 'DM Sans', 'Noto Sans TC', system-ui, sans-serif;
   --font-display: 'Bricolage Grotesque', 'Noto Sans TC', system-ui, sans-serif;
@@ -14,24 +14,49 @@
   --color-pulse: #ff335c;
   --color-frequency: #009fff;
 
-  --color-sky-50: #f0faff;
-  --color-sky-100: #dcf3ff;
-  --color-sky-200: #b9e7ff;
-  --color-sky-300: #a3deff;
-  --color-sky-400: #8fd6ff;
-  --color-sky-500: #5fc0f5;
-  --color-sky-600: #3aa3dc;
-  --color-sky-700: #2c83b4;
-  --color-sky-800: #286a90;
-  --color-sky-900: #265876;
-  --color-sky-950: #16364b;
+  --color-blush-50: #fff1f6;
+  --color-blush-100: #ffe0ec;
+  --color-blush-200: #ffc2d9;
+  --color-blush-300: #ff9fc3;
+  --color-blush-400: #ff7aab;
+  --color-blush-500: #f5568f;
+  --color-blush-600: #e03a78;
+  --color-blush-700: #bd2a62;
+  --color-blush-800: #9a2552;
+  --color-blush-900: #7f2246;
+  --color-blush-950: #4a0e26;
 }
 
-:root,
-.dark {
-  --ui-primary: var(--color-sky-400);
+/* 預設淺色：純白底、墨黑字；.dark 只在明確切換時才出現 */
+:root {
+  /* 白底上淡粉太淡，主色用 500 */
+  --ui-primary: var(--color-blush-500);
   --ui-error: var(--color-pulse);
   --ui-info: var(--color-frequency);
+
+  --ui-bg: #ffffff;
+  --ui-bg-muted: #f5f5f5;
+  --ui-bg-elevated: #f7f7f7;
+  --ui-bg-accented: #e8e8e8;
+  --ui-bg-inverted: var(--color-ink);
+
+  --ui-border: rgb(20 20 20 / 0.1);
+  --ui-border-muted: rgb(20 20 20 / 0.06);
+  --ui-border-accented: rgb(20 20 20 / 0.2);
+  --ui-border-inverted: var(--color-ink);
+
+  --ui-text-dimmed: rgb(20 20 20 / 0.4);
+  --ui-text-muted: rgb(20 20 20 / 0.55);
+  --ui-text-toned: rgb(20 20 20 / 0.75);
+  --ui-text: var(--color-ink);
+  --ui-text-highlighted: #000000;
+  --ui-text-inverted: #ffffff;
+
+  --ui-radius: 0.125rem;
+}
+
+.dark {
+  --ui-primary: var(--color-blush-400);
 
   --ui-bg: var(--color-ink);
   --ui-bg-muted: var(--color-ink-2);
@@ -50,8 +75,6 @@
   --ui-text: var(--color-bone);
   --ui-text-highlighted: #ffffff;
   --ui-text-inverted: var(--color-ink);
-
-  --ui-radius: 0.125rem;
 }
 
 body {
