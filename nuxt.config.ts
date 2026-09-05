@@ -10,6 +10,14 @@ export default defineNuxtConfig({
     enabled: true
   },
 
+  app: {
+    head: {
+      title: 'AI Social',
+      htmlAttrs: { lang: 'zh-Hant-TW' },
+      meta: [{ name: 'viewport', content: 'width=device-width, initial-scale=1, viewport-fit=cover' }]
+    }
+  },
+
   css: ['~/assets/css/main.css'],
 
   colorMode: {
