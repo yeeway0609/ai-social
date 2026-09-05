@@ -1,5 +1,5 @@
 ---
-id: TASK-014
+id: TASK-019
 title: 聊天列表顯示未讀訊息數量
 status: In Progress
 assignee: []
@@ -11,7 +11,7 @@ labels:
   - feature
 dependencies: []
 priority: high
-ordinal: 14000
+ordinal: 19000
 ---
 
 ## Description
@@ -32,5 +32,5 @@ ordinal: 14000
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
-已在 feature/chat-unread 實作，未 commit 待 review。新增 conversation_reads 表（migration 0002 已套到 Neon）；listConversations 一次查出各對話未讀數；messages GET 端點順手把閱讀時間推到現在；列表顯示粉紅徽章與加粗。已用 kevin 帳號打 /api/conversations 驗證 unreadCount 正確。PRD doc-004 與 decision-023 已更新。
+已在 feature/chat-unread 實作，未 commit 待 review。新增 conversation_reads 表（migration 0002 已套到 Neon）；listConversations 一次查出各對話未讀數；messages GET 端點順手把閱讀時間推到現在；列表顯示粉紅徽章與加粗。已用 kevin 帳號打 /api/conversations 驗證 unreadCount 正確。PRD doc-004 與 decision-024 已更新。
 <!-- SECTION:NOTES:END -->
