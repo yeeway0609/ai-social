@@ -76,7 +76,7 @@ async function handleSubmitSettings() {
         class="w-full"
         :rows="3"
         disabled
-        placeholder="尚未支援，之後會開放"
+        placeholder="尚未支援"
       />
     </UFormField>
 
