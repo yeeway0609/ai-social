@@ -32,7 +32,6 @@ async function handleSubmitLogin() {
     </p>
     <div class="mt-3 flex items-center gap-3">
       <BrandLogo
-        class="text-primary"
         size="size-12"
       />
       <h1 class="page-title text-4xl normal-case">

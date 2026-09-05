@@ -30,7 +30,6 @@ const activeTabIndex = computed(() => TABS.findIndex(tab => isActive(tab.to)))
           class="flex items-center gap-2"
         >
           <BrandLogo
-            class="text-primary"
             size="size-7"
           />
           <span class="page-title text-lg normal-case">不痛 Tone</span>
