@@ -1,7 +1,10 @@
 import { MAX_TEXT_LENGTH } from '../../../shared/utils/content.ts'
 import type { RenditionError } from '../../../shared/types/api.ts'
+import type { SemanticSimilarityResult } from '../../../shared/types/semanticSimilarity.ts'
 
 const MAX_RENDITION_LENGTH_MULTIPLIER = 2
+export const MIN_SEMANTIC_SIMILARITY_SCORE = 0.8
+const SEMANTIC_SIMILARITY_EXACT_MATCH_EPSILON = 1e-9
 
 const EXACT_TOKEN_PATTERNS = [
   /https?:\/\/[^\s<>"'，。！？、）)]+/giu,
@@ -14,6 +17,15 @@ export class InvalidRenditionError extends Error {
   readonly code: Extract<RenditionError, 'invalid_model_output' | 'token_changed' | 'output_too_long'>
 
   constructor(code: Extract<RenditionError, 'invalid_model_output' | 'token_changed' | 'output_too_long'>) {
+    super(code)
+    this.code = code
+  }
+}
+
+export class InvalidSemanticSimilarityError extends Error {
+  readonly code: Extract<RenditionError, 'semantic_similarity_unavailable' | 'semantic_similarity_too_low'>
+
+  constructor(code: Extract<RenditionError, 'semantic_similarity_unavailable' | 'semantic_similarity_too_low'>) {
     super(code)
     this.code = code
   }
@@ -41,4 +53,18 @@ export function validateRenditionText(originalText: string, renditionText: strin
   for (const token of uniqueExactTokens(originalText.normalize('NFC'))) {
     if (!normalized.includes(token)) throw new InvalidRenditionError('token_changed')
   }
+}
+
+export function validateSemanticSimilarityForRendition(semanticSimilarity: SemanticSimilarityResult): void {
+  if (semanticSimilarity.status !== 'ok') {
+    throw new InvalidSemanticSimilarityError('semantic_similarity_unavailable')
+  }
+  if (semanticSimilarity.score <= MIN_SEMANTIC_SIMILARITY_SCORE) {
+    throw new InvalidSemanticSimilarityError('semantic_similarity_too_low')
+  }
+}
+
+export function isSemanticallySameAsOriginal(semanticSimilarity: SemanticSimilarityResult | null): boolean {
+  return semanticSimilarity?.status === 'ok'
+    && semanticSimilarity.score >= 1 - SEMANTIC_SIMILARITY_EXACT_MATCH_EPSILON
 }
