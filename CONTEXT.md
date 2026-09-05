@@ -2,25 +2,22 @@
 
 本檔定義每個領域概念的正式名稱、對應的程式碼識別碼，以及該避免的同義詞。命名、文件與註解的用詞以本檔為準。
 
-## 產品名稱（暫定）
+## 產品名稱
 
-正式名稱是 **AI Social**，識別碼一律 `ai-social`。
+正式名稱是 **不痛 Tone**（「不痛」＋「Tone」，讀起來像「不痛痛」），視覺意象是**安全帽**：戴上它，別人的話砸下來就不痛。品牌標誌在 `app/components/BrandLogo.vue`，favicon 在 `public/favicon.svg`。
 
-**這是佔位名稱，尚未定案。** 改名時要一起換掉的地方如下，repo 內外都有：
+程式識別碼維持 `ai-social`，不跟著改名——它只出現在機器看的地方，改了只會讓既有登入狀態失效：
 
-| 位置 | 現值 |
+| 位置 | 值 |
 |---|---|
-| `README.md` 標題、`CLAUDE.md` 標題 | AI Social |
-| `app/pages/index.vue` 首頁標題 | AI Social |
 | `package.json` 的 `name` | `ai-social` |
-| `backlog/config.yml` 的 `project_name` | AI Social |
 | `nuxt.config.ts` 的 `colorMode.storageKey` | `ai-social-color-mode` |
 | `server/utils/session.ts` 的 `COOKIE` | `ai-social-session` |
 | GitHub repo | `yeeway0609/ai-social` |
 | Vercel project | `ai-social` |
 | Neon resource | `ai-social-db` |
 
-改 `storageKey` 與 `COOKIE` 會讓所有既有瀏覽器的偏好設定與登入狀態失效——正式上線後才改要當成一次登出事件處理，現在改沒有成本。
+使用者看得到的地方（頁首、登入頁、瀏覽器分頁標題、`README.md`、`CLAUDE.md`、backlog 的 `project_name`）一律寫「不痛 Tone」，中英之間留一個半形空格。
 
 ## 核心概念
 
@@ -73,7 +70,7 @@
 
 使用者自己填入的 API key。只存在使用者的瀏覽器（localStorage），隨每次改寫請求以標頭送到伺服器、用完即丟；平台不保存。
 
-- 識別碼：`OwnCredential`、`useOwnCredential()`、`CredentialSource` 的 `own`、標頭 `x-ai-provider`／`x-ai-key`
+- 識別碼：`OwnCredential`、`useOwnCredential()`、`CredentialSource` 的 `own`、標頭 `x-ai-provider`／`x-ai-key`（另有 `x-ai-model`、`x-ai-temperature`、`x-ai-max-output-tokens`、`x-ai-base-url`）
 - 避免：「BYOK」（縮寫，非行業慣例到可直接使用的程度）
 
 ### 共用池（pool）

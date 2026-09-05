@@ -64,7 +64,8 @@ async function generate(content: LoadedContent, tone: Tone, customInstruction: s
       original: wrapOriginal(content.originalText),
       timeoutMs: RENDER_TIMEOUT_MS,
       temperature: credential.temperature,
-      maxOutputTokens: credential.maxOutputTokens
+      maxOutputTokens: credential.maxOutputTokens,
+      baseUrl: credential.baseUrl
     })
   } catch (err) {
     throw new GenerationFailure(classifyProviderError(err) ?? 'provider_error')

@@ -14,6 +14,8 @@ export type RewriteFn = (args: {
   timeoutMs: number
   temperature?: number
   maxOutputTokens?: number
+  /** 只有 compatible 用：使用者指定的 OpenAI 相容端點。 */
+  baseUrl?: string
 }) => Promise<string>
 
 const DEFAULT_MAX_OUTPUT_TOKENS = 1024
@@ -59,12 +61,27 @@ const openrouter: RewriteFn = async ({ apiKey, model, system, original, timeoutM
   return response.choices[0]?.message.content?.trim() ?? ''
 }
 
-export const REWRITE_FNS: Record<AiProvider, RewriteFn> = { anthropic, openai, openrouter }
+/**
+ * 使用者自己指定端點的 OpenAI 相容服務，走最普及的 chat completions。
+ * 本地推論框架（Qwen 等）可能把思考過程用 <think> 夾在輸出裡，改寫只要正文。
+ */
+const compatible: RewriteFn = async ({ apiKey, model, system, original, timeoutMs, temperature, maxOutputTokens, baseUrl }) => {
+  if (!baseUrl) throw new Error('OpenAI 相容端點缺少 base URL')
+  const response = await new OpenAI({ apiKey, baseURL: baseUrl, timeout: timeoutMs, maxRetries: 0 }).chat.completions.create({
+    model,
+    messages: [{ role: 'system', content: system }, { role: 'user', content: original }],
+    temperature,
+    max_tokens: maxOutputTokens
+  })
+  return (response.choices[0]?.message.content ?? '').replace(/<think>[\s\S]*?<\/think>/g, '').trim()
+}
+
+export const REWRITE_FNS: Record<AiProvider, RewriteFn> = { anthropic, openai, openrouter, compatible }
 
 /** 自備金鑰可指定模型，沒指定就用該供應商的環境預設。 */
 export function modelFor(provider: AiProvider, override?: string) {
   const { ai } = useRuntimeConfig()
-  return override || { anthropic: ai.modelAnthropic, openai: ai.modelOpenai, openrouter: ai.modelOpenrouter }[provider]
+  return override || { anthropic: ai.modelAnthropic, openai: ai.modelOpenai, openrouter: ai.modelOpenrouter, compatible: '' }[provider]
 }
 
 /** SDK 的逾時與額度錯誤各自對應不同的前端處置（重試 vs 導去設定金鑰），所以分開辨識。 */

@@ -18,7 +18,8 @@ function read(): OwnCredential | null {
       apiKey: parsed.apiKey,
       model: typeof parsed.model === 'string' && parsed.model ? parsed.model : undefined,
       temperature: typeof parsed.temperature === 'number' ? parsed.temperature : undefined,
-      maxOutputTokens: typeof parsed.maxOutputTokens === 'number' ? parsed.maxOutputTokens : undefined
+      maxOutputTokens: typeof parsed.maxOutputTokens === 'number' ? parsed.maxOutputTokens : undefined,
+      baseUrl: typeof parsed.baseUrl === 'string' && parsed.baseUrl ? parsed.baseUrl : undefined
     }
   } catch {
     return null
@@ -66,5 +67,6 @@ export function ownCredentialHeaders(): Record<string, string> {
   if (credential.model) headers['x-ai-model'] = credential.model
   if (credential.temperature !== undefined) headers['x-ai-temperature'] = String(credential.temperature)
   if (credential.maxOutputTokens !== undefined) headers['x-ai-max-output-tokens'] = String(credential.maxOutputTokens)
+  if (credential.baseUrl) headers['x-ai-base-url'] = credential.baseUrl
   return headers
 }
