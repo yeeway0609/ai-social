@@ -1,6 +1,6 @@
 /**
- * 預設語氣清單。`original` 是「不改寫」這個特例值，也算一種語氣選項。
- * instruction 是交給模型的風格描述；清單內容仍待與隊友定案，改這裡即可。
+ * 預設語氣清單；讀者一定選其中一種，沒有「不改寫」這種選項，原文只透過顯示原文、
+ * 自己的內容或改寫失敗出現。instruction 是交給模型的風格描述，清單內容改這裡即可。
  */
 export interface Tone {
   id: string
@@ -10,16 +10,7 @@ export interface Tone {
   instruction: string
 }
 
-export const ORIGINAL_TONE = 'original'
-
 export const TONES: readonly Tone[] = [
-  {
-    id: ORIGINAL_TONE,
-    label: '不改寫',
-    description: '照原文顯示，不經過 AI。',
-    sample: '今天的會議真的很浪費時間。',
-    instruction: ''
-  },
   {
     id: 'gentle',
     label: '溫和體貼',

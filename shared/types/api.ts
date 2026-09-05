@@ -93,7 +93,7 @@ export interface RenditionResult {
   kind: ContentKind
   id: string
   text: string
-  /** true 代表這就是原文（讀者選不改寫、作者本人、或改寫失敗）。 */
+  /** true 代表這就是原文（作者本人、讀者尚未設定語氣、或改寫失敗）。 */
   isOriginal: boolean
   scale: RewriteScale | null
   source: CredentialSource | null

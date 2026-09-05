@@ -19,7 +19,7 @@ export default defineEventHandler(async (event): Promise<MessageSummary> => {
   // 訊息只預產收件人當下的語氣，不像貼文全部預產
   const recipientId = conversation.low === viewerId ? conversation.high : conversation.low
   const [recipient] = await useDb().select({ tone: schema.users.tone }).from(schema.users).where(eq(schema.users.id, recipientId)).limit(1)
-  if (recipient?.tone && recipient.tone !== ORIGINAL_TONE) schedulePregeneration(event, 'message', message.id, viewerId, [recipient.tone])
+  if (recipient?.tone) schedulePregeneration(event, 'message', message.id, viewerId, [recipient.tone])
 
   setResponseStatus(event, 201)
   return message

@@ -91,8 +91,9 @@ export async function renderContent(kind: ContentKind, id: string, viewerId: str
     .from(schema.users)
     .where(eq(schema.users.id, viewerId))
     .limit(1)
-  const tone = findTone(viewer?.tone ?? ORIGINAL_TONE)
-  if (!tone || tone.id === ORIGINAL_TONE) return original()
+  // tone 為 null 代表尚未完成引導設定；值域外的舊值同樣視為無語氣，都回原文
+  const tone = viewer?.tone ? findTone(viewer.tone) : undefined
+  if (!tone) return original()
 
   const credential = await resolveViewerCredential(viewerId)
   // 自訂指示只在讀者有自備金鑰時生效；金鑰被刪後自動退回純預設語氣的共用快取
@@ -126,7 +127,7 @@ export async function pregenerateRenditions(kind: ContentKind, id: string, crede
   const credential = await resolveViewerCredential(credentialUserId)
   if (!credential) return { generated: 0, failed: 0 }
 
-  const targets = TONES.filter(tone => tone.id !== ORIGINAL_TONE && (!toneIds || toneIds.includes(tone.id)))
+  const targets = TONES.filter(tone => !toneIds || toneIds.includes(tone.id))
   let generated = 0
   let failed = 0
   await Promise.all(targets.map(async (tone) => {

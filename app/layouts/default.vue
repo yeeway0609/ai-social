@@ -10,7 +10,7 @@ const route = useRoute()
 const { user } = useAuth()
 const credentialWarning = useCredentialWarning()
 
-const currentTone = computed(() => findTone(user.value?.tone ?? ORIGINAL_TONE))
+const currentTone = computed(() => (user.value?.tone ? findTone(user.value.tone) : undefined))
 
 function isActive(to: string) {
   if (to === '/') return route.path === '/'

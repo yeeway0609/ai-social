@@ -17,10 +17,9 @@ const customInstruction = ref(user.value?.customInstruction ?? '')
 const isSubmitting = ref(false)
 
 const hasOwnCredential = computed(() => credentials.value.length > 0)
-const isCustomAllowed = computed(() => tone.value !== ORIGINAL_TONE && hasOwnCredential.value)
+const isCustomAllowed = computed(() => hasOwnCredential.value)
 const remaining = computed(() => MAX_CUSTOM_INSTRUCTION_LENGTH - customInstruction.value.length)
 const customInstructionHint = computed(() => {
-  if (tone.value === ORIGINAL_TONE) return '選「不改寫」時不會套用。'
   if (!hasOwnCredential.value) return '需要先在設定頁填入自己的 API 金鑰才能使用，因為這種改寫會用你自己的額度。'
   return '用自己的話補充，例如「多用台語詞」「不要用驚嘆號」。只影響語氣，不會改變內容的意思。'
 })
