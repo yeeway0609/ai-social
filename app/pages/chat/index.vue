@@ -9,6 +9,14 @@ const openingUserId = ref<string | null>(null)
 
 const isLoading = computed(() => status.value === 'pending' || status.value === 'idle')
 
+/** 列表只放一行預覽：自己的訊息給原文；對方的訊息和對話內一樣只給改寫版，還沒改寫好就先留白。 */
+function previewText(row: ConversationSummary) {
+  const message = row.lastMessage
+  if (!message) return null
+  if (message.isOwn) return `你：${message.originalText}`
+  return message.rendition?.text ?? message.originalText ?? '…'
+}
+
 async function handleClickConversation(row: ConversationSummary) {
   if (openingUserId.value) return
   openingUserId.value = row.other.id
@@ -79,7 +87,7 @@ async function handleClickConversation(row: ConversationSummary) {
               {{ row.other.displayName }}
             </p>
             <p class="truncate text-sm text-muted">
-              @{{ row.other.username }}
+              {{ previewText(row) ?? `@${row.other.username}` }}
             </p>
           </div>
           <UIcon

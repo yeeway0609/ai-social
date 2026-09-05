@@ -1,6 +1,6 @@
-import { and, asc, eq, gt, ne, or, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, gt, inArray, ne, or, sql } from 'drizzle-orm'
 import { schema, useDb } from '../db'
-import { getViewer, renditionColumns, renditionJoin, toContentSummary } from './ai/render'
+import { getViewer, renditionColumns, renditionJoin, toContentSummary, type Viewer } from './ai/render'
 import { userSummaryColumns } from './users'
 
 function orderPair(a: string, b: string) {
@@ -38,7 +38,29 @@ export async function getConversationForViewer(conversationId: string, viewerId:
   return row ?? null
 }
 
-/** 每位其他使用者一列，不論聊過沒有；列表不帶訊息內容，所以不觸發改寫。 */
+/** 每個對話最後一則訊息，一次查完；改寫在寫入時已預產，這裡只是 join 現成的結果。 */
+async function fetchLastMessages(viewer: Viewer, conversationIds: string[]): Promise<Map<string, MessageSummary>> {
+  if (conversationIds.length === 0) return new Map()
+  const rows = await useDb()
+    .selectDistinctOn([schema.messages.conversationId], {
+      conversationId: schema.messages.conversationId,
+      id: schema.messages.id,
+      authorId: schema.messages.senderId,
+      originalText: schema.messages.originalText,
+      createdAt: schema.messages.createdAt,
+      author: userSummaryColumns,
+      ...renditionColumns
+    })
+    .from(schema.messages)
+    .innerJoin(schema.users, eq(schema.users.id, schema.messages.senderId))
+    .leftJoin(schema.renditions, renditionJoin('message', schema.messages.id, viewer.tone))
+    .where(inArray(schema.messages.conversationId, conversationIds))
+    .orderBy(schema.messages.conversationId, desc(schema.messages.createdAt), desc(schema.messages.id))
+
+  return new Map(rows.map(row => [row.conversationId, { ...toContentSummary(row, viewer), conversationId: row.conversationId }]))
+}
+
+/** 每位其他使用者一列，不論聊過沒有；預覽用的最後一則訊息另外一次查完。 */
 export async function listConversations(viewerId: string): Promise<ConversationSummary[]> {
   const rows = await useDb()
     .select({
@@ -54,10 +76,14 @@ export async function listConversations(viewerId: string): Promise<ConversationS
     .where(ne(schema.users.id, viewerId))
     .orderBy(sql`${schema.conversations.lastMessageAt} desc nulls last`, schema.users.displayName)
 
+  const viewer = await getViewer(viewerId)
+  const lastMessages = await fetchLastMessages(viewer, rows.flatMap(row => row.conversationId ? [row.conversationId] : []))
+
   return rows.map(row => ({
     other: row.other,
     conversationId: row.conversationId,
-    lastMessageAt: row.lastMessageAt?.toISOString() ?? null
+    lastMessageAt: row.lastMessageAt?.toISOString() ?? null,
+    lastMessage: row.conversationId ? lastMessages.get(row.conversationId) ?? null : null
   }))
 }
 
