@@ -1,4 +1,3 @@
-import type { CredentialSource } from '../utils/ai'
 import type { ContentKind, RewriteScale } from '../utils/content'
 import type { SemanticSimilarityResult } from './semanticSimilarity'
 
@@ -11,13 +10,11 @@ export interface UserSummary {
 /** 登入者本人；tone 為 null 代表尚未完成引導設定。 */
 export interface CurrentUser extends UserSummary {
   tone: string | null
-  customInstruction: string | null
   onboardedAt: string | null
 }
 
 export interface SettingsUpdate {
   tone: string
-  customInstruction: string | null
 }
 
 export interface LoginRequest {
@@ -25,8 +22,16 @@ export interface LoginRequest {
   password: string
 }
 
+/** 一則內容在讀者語氣下已存好的改寫；讀取時直接從資料庫撈，不再呼叫模型。 */
+export interface Rendition {
+  text: string
+  scale: RewriteScale
+  /** null 表示舊快取尚未評估。 */
+  semanticSimilarity: SemanticSimilarityResult | null
+}
+
 /**
- * 他人的內容不帶原文，前端要透過改寫服務或「顯示原文」另外取得；
+ * 他人的內容不帶原文，前端顯示 rendition，或透過「顯示原文」另外取得；
  * 自己的內容 originalText 直接給，因為作者永遠看原文。
  */
 export interface ContentSummary {
@@ -35,6 +40,10 @@ export interface ContentSummary {
   originalText: string | null
   isOwn: boolean
   createdAt: string
+  /** 他人的內容才有；null 代表這個語氣還沒有改寫（尚在預產中，或預產失敗）。 */
+  rendition: Rendition | null
+  /** 剛寫入、背景預產可能還沒跑完；前端據此決定要等一下再撈還是直接顯示原文。 */
+  isRenditionPending: boolean
 }
 
 export interface PostSummary extends ContentSummary {
@@ -70,28 +79,18 @@ export interface ConversationSummary {
   lastMessageAt: string | null
 }
 
-export interface RenderRequest {
+/** 預產尚未完成時前端輪詢用；改寫仍缺且已不在等待期，就附上原文讓前端直接顯示。 */
+export interface RenditionLookup {
   kind: ContentKind
   id: string
+  rendition: Rendition | null
+  isPending: boolean
+  originalText: string | null
 }
 
-export interface RenditionResult {
-  kind: ContentKind
-  id: string
-  text: string
-  /** true 代表這就是原文（作者本人、讀者尚未設定語氣、或改寫失敗）。 */
-  isOriginal: boolean
-  scale: RewriteScale | null
-  /** null 表示尚未評估、舊快取或顯示原文。 */
-  semanticSimilarity: SemanticSimilarityResult | null
-  source: CredentialSource | null
-  error: RenditionError | null
-}
-
+/** 預產單一語氣時的失敗分類；只在伺服器內部與 log 使用，讀者端看不到。 */
 export type RenditionError
-  = | 'no_ai_credential'
-    | 'provider_authentication_failed'
-    | 'provider_rate_limited'
+  = | 'ai_unavailable'
     | 'provider_error'
     | 'timeout'
     | 'invalid_model_output'
@@ -102,18 +101,4 @@ export interface OriginalResult {
   kind: ContentKind
   id: string
   text: string
-}
-
-/** 批次端點的整合契約；目前單筆端點與前端佇列尚未切換。 */
-export interface RenderBatchRequest {
-  items: RenderRequest[]
-}
-
-export type RenderBatchItem = Omit<RenditionResult, 'error'> & {
-  error: RenditionResult['error']
-}
-
-export interface RenderBatchResult {
-  version: 'rendition-batch-v1'
-  items: RenderBatchItem[]
 }

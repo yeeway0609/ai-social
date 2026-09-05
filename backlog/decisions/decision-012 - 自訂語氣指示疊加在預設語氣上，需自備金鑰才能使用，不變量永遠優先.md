@@ -2,7 +2,7 @@
 id: decision-012
 title: 自訂語氣指示疊加在預設語氣上，需自備金鑰才能使用，不變量永遠優先
 date: '2026-09-05 03:13'
-status: accepted
+status: superseded
 ---
 > PRD：語氣改寫引擎 PRD（doc-002）
 

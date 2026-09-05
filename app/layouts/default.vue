@@ -8,7 +8,6 @@ const TABS = [
 
 const route = useRoute()
 const { user } = useAuth()
-const credentialWarning = useCredentialWarning()
 
 const currentTone = computed(() => (user.value?.tone ? findTone(user.value.tone) : undefined))
 
@@ -46,18 +45,6 @@ const activeTabIndex = computed(() => TABS.findIndex(tab => isActive(tab.to)))
           :label="currentTone?.label ?? '設定語氣'"
         />
       </div>
-      <UAlert
-        v-if="credentialWarning.isVisible.value"
-        class="rounded-none"
-        color="warning"
-        variant="soft"
-        icon="i-mingcute-key-2-line"
-        :title="credentialWarning.title.value"
-        :description="credentialWarning.description.value"
-        :actions="[{ label: '前往設定', to: '/settings', color: 'warning', variant: 'solid', size: 'xs' }]"
-        :close="true"
-        @update:open="credentialWarning.dismiss()"
-      />
     </header>
 
     <main class="mx-auto w-full max-w-xl pb-20">

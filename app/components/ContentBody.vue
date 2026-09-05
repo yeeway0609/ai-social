@@ -1,28 +1,9 @@
 <script setup lang="ts">
-import type { CredentialWarningKind } from '~/composables/useCredentialWarning'
-
 /**
  * 一則內容（貼文／留言／訊息）的正文區，負責整個語氣層的讀者端行為：
- * 自己的內容直接顯示原文；他人的內容進入可視範圍前排隊改寫、完成前顯示骨架；
+ * 自己的內容直接顯示原文；他人的內容顯示列表帶回的改寫，還在預產中就先顯示骨架並輪詢；
  * 標籤標示「AI 改寫」或「原文」；「顯示原文」一次性切回、不呼叫模型。
  */
-const RENDITION_ERROR_LABELS: Record<RenditionError, string> = {
-  no_ai_credential: '沒有可用金鑰',
-  provider_authentication_failed: '金鑰驗證失敗',
-  provider_rate_limited: '供應商額度受限',
-  provider_error: '供應商回應失敗',
-  timeout: '供應商回應逾時',
-  invalid_model_output: '模型輸出格式錯誤',
-  token_changed: '登入狀態已更新',
-  output_too_long: '模型輸出過長'
-}
-
-const CREDENTIAL_WARNING_KIND_BY_ERROR: Partial<Record<RenditionError, CredentialWarningKind>> = {
-  no_ai_credential: 'missing',
-  provider_authentication_failed: 'authenticationFailed',
-  provider_rate_limited: 'rateLimited'
-}
-
 const props = withDefaults(defineProps<{
   kind: ContentKind
   content: ContentSummary
@@ -30,36 +11,37 @@ const props = withDefaults(defineProps<{
   compact?: boolean
 }>(), { compact: false })
 
-const emit = defineEmits<{ renderFailed: [error: RenditionResult['error']] }>()
-
-const { epoch, render } = useRenditionQueue()
-const credentialWarning = useCredentialWarning()
-
 const root = ref<HTMLElement | null>(null)
-const rendition = ref<RenditionResult | null>(null)
+const rendition = ref<Rendition | null>(props.content.rendition)
 const originalText = ref<string | null>(props.content.originalText)
+const isPending = ref(props.content.isRenditionPending)
 const isRevealingOriginal = ref(false)
 const isLoadingOriginal = ref(false)
 const isNearViewport = ref(false)
-const renderedEpoch = ref(-1)
+let pollCount = 0
+let pollTimer: ReturnType<typeof setTimeout> | undefined
+
+// 列表重抓（例如換語氣後）會給同一個元件新的 content，跟著換
+watch(() => props.content, (content) => {
+  rendition.value = content.rendition
+  originalText.value = content.originalText ?? originalText.value
+  isPending.value = content.isRenditionPending
+  pollCount = 0
+})
 
 const displayText = computed(() => {
   if (props.content.isOwn) return props.content.originalText
   if (isRevealingOriginal.value) return originalText.value
-  return rendition.value?.text ?? null
+  if (rendition.value) return rendition.value.text
+  return isPending.value ? null : originalText.value
 })
-const isOriginalShown = computed(() => props.content.isOwn || isRevealingOriginal.value || rendition.value?.isOriginal === true)
+const isOriginalShown = computed(() => props.content.isOwn || isRevealingOriginal.value || rendition.value === null)
 const isLoading = computed(() => displayText.value === null)
-const canReveal = computed(() => !props.content.isOwn && rendition.value && !rendition.value.isOriginal)
-const canRetry = computed(() => !props.content.isOwn && !isLoading.value && !!rendition.value?.error)
-const scaleLabel = computed(() => rendition.value?.scale ? REWRITE_SCALE_LABELS[rendition.value.scale] : null)
-const renditionErrorLabel = computed(() => {
-  const error = rendition.value?.error
-  return error ? RENDITION_ERROR_LABELS[error] : null
-})
+const canReveal = computed(() => !props.content.isOwn && rendition.value !== null)
+const scaleLabel = computed(() => rendition.value ? REWRITE_SCALE_LABELS[rendition.value.scale] : null)
 const semanticSimilarityLabel = computed(() => {
   const semanticSimilarity = rendition.value?.semanticSimilarity
-  if (!rendition.value || rendition.value.isOriginal || !semanticSimilarity) return null
+  if (!semanticSimilarity) return null
   if (semanticSimilarity.status === 'unavailable') return '語意相似度暫不可用'
   return `語意相似度 ${(semanticSimilarity.score * 100).toFixed(1)}%`
 })
@@ -68,33 +50,40 @@ useIntersectionObserver(root, ([entry]) => {
   if (entry?.isIntersecting) isNearViewport.value = true
 }, { rootMargin: '600px 0px' })
 
-async function loadRendition(currentEpoch: number, refresh = false) {
-  if (props.content.isOwn) return
-  renderedEpoch.value = currentEpoch
-  rendition.value = null
-  isRevealingOriginal.value = false
+/** 預產還沒跑完時每隔幾秒撈一次；超過次數就放棄，改顯示原文。 */
+async function pollRendition() {
   try {
-    const result = await render({ kind: props.kind, id: props.content.id }, { refresh })
-    rendition.value = result
-    if (result.isOriginal) originalText.value = result.text
-    if (result.error) {
-      emit('renderFailed', result.error)
-      const warningKind = CREDENTIAL_WARNING_KIND_BY_ERROR[result.error]
-      if (warningKind) credentialWarning.show(warningKind)
-    }
+    const result = await $fetch<RenditionLookup>('/api/renditions', { query: { kind: props.kind, id: props.content.id } })
+    rendition.value = result.rendition
+    if (result.originalText !== null) originalText.value = result.originalText
+    isPending.value = result.isPending && ++pollCount < RENDITION_POLL_MAX_COUNT
   } catch {
-    emit('renderFailed', 'provider_error')
-    rendition.value = { kind: props.kind, id: props.content.id, text: '（載入失敗）', isOriginal: true, scale: null, semanticSimilarity: null, source: null, error: 'provider_error' }
+    isPending.value = ++pollCount < RENDITION_POLL_MAX_COUNT
   }
+  if (isPending.value) pollTimer = setTimeout(pollRendition, RENDITION_POLL_INTERVAL_MS)
+  else if (!rendition.value && originalText.value === null) await loadOriginal()
 }
 
-watch([isNearViewport, epoch], async ([isNear, currentEpoch]) => {
-  if (!isNear || props.content.isOwn || renderedEpoch.value === currentEpoch) return
-  await loadRendition(currentEpoch)
+watch([isNearViewport, isPending], ([isNear, pending]) => {
+  clearTimeout(pollTimer)
+  if (isNear && pending && !props.content.isOwn) pollTimer = setTimeout(pollRendition, RENDITION_POLL_INTERVAL_MS)
+  // 不在等待期、又沒有改寫（預產失敗）：列表沒帶原文，要另外抓
+  else if (isNear && !pending && !rendition.value && !props.content.isOwn && originalText.value === null) loadOriginal()
 }, { immediate: true })
 
-async function handleRetry() {
-  await loadRendition(epoch.value, true)
+onBeforeUnmount(() => clearTimeout(pollTimer))
+
+async function loadOriginal() {
+  if (originalText.value !== null || isLoadingOriginal.value) return
+  isLoadingOriginal.value = true
+  try {
+    const result = await $fetch<OriginalResult>('/api/original', { query: { kind: props.kind, id: props.content.id } })
+    originalText.value = result.text
+  } catch {
+    originalText.value = '（載入失敗）'
+  } finally {
+    isLoadingOriginal.value = false
+  }
 }
 
 async function handleClickReveal() {
@@ -102,15 +91,7 @@ async function handleClickReveal() {
     isRevealingOriginal.value = false
     return
   }
-  if (originalText.value === null) {
-    isLoadingOriginal.value = true
-    try {
-      const result = await $fetch<OriginalResult>('/api/original', { query: { kind: props.kind, id: props.content.id } })
-      originalText.value = result.text
-    } finally {
-      isLoadingOriginal.value = false
-    }
-  }
+  await loadOriginal()
   isRevealingOriginal.value = true
 }
 </script>
@@ -171,15 +152,6 @@ async function handleClickReveal() {
           </template>
         </UBadge>
       </Transition>
-      <UBadge
-        v-if="renditionErrorLabel"
-        color="warning"
-        variant="subtle"
-        size="sm"
-        icon="i-mingcute-warning-line"
-      >
-        未改寫：{{ renditionErrorLabel }}
-      </UBadge>
       <UButton
         v-if="canReveal"
         color="neutral"
@@ -188,15 +160,6 @@ async function handleClickReveal() {
         :loading="isLoadingOriginal"
         :label="isRevealingOriginal ? '回到改寫版' : '顯示原文'"
         @click.stop="handleClickReveal"
-      />
-      <UButton
-        v-if="canRetry"
-        color="neutral"
-        variant="link"
-        size="xs"
-        icon="i-lucide-rotate-ccw"
-        label="重試"
-        @click.stop="handleRetry"
       />
     </div>
   </div>

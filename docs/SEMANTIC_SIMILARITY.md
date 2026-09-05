@@ -4,9 +4,9 @@
 
 ## 呼叫與金鑰
 
-呼叫端提供 `originalText`、`rewrittenText` 與 OpenAI `apiKey`，可指定 `model`、`timeoutMs`。預設模型為 `text-embedding-3-small`，預設逾時為 5000 毫秒，不自動重試。模型可設定不等同已完成繁體中文校準。
+呼叫端提供 `originalText`、`rewrittenText` 與 `apiKey`，可指定 `model`、`timeoutMs`、`embeddingsUrl`（任何 OpenAI 相容的 embeddings 端點）與 `extraBody`（端點專屬參數）。預設端點為 OpenAI 官方、模型 `text-embedding-3-small`，預設逾時為 5000 毫秒，不自動重試。
 
-整合時須先驗證登入與內容存取權，從資料庫取得正式原文。金鑰依既有 `resolveCredential(viewerId, 'openai')` 取得自備或共用池金鑰；不能把 Anthropic 或其他生成供應商的金鑰直接交給 embedding API。模組不自行查詢資料庫或金鑰，也不讀取新的環境變數。
+目前的整合走 NVIDIA NIM：端點 `https://integrate.api.nvidia.com/v1/embeddings`、模型由 `NUXT_AI_EMBEDDING_MODEL` 決定（預設 `nvidia/llama-3.2-nv-embedqa-1b-v2`）、金鑰與改寫模型共用 `NUXT_AI_NVIDIA_API_KEY`，並帶 `input_type: passage`。評估只在寫入時預產改寫的流程裡發生，讀取路徑不重算。模組不自行查詢資料庫或金鑰。
 
 ## 結果
 
@@ -26,7 +26,7 @@ node --test tests/semanticSimilarity.test.mjs
 
 測試使用人工向量與模擬 HTTP 回應，不發送真實貼文、不耗用模型額度。它驗證計算與錯誤處理，不代表繁體中文語意品質已驗收。
 
-目前已完成計算模組並接上生成流程。有效改寫會在輸出驗證通過後評估；評估失敗不讓改寫失敗，而是回傳 `semanticSimilarity: { status: 'unavailable', score: null, error }`。預設語氣的結果會把分數／模型／版本或評估錯誤寫入 `renditions`，自訂結果與分數只回傳給用戶端暫存。已建立本地繁體中文校準樣本與排序測試，真實 embedding 金鑰實測仍未完成，不可把舊 `scale` 字串直接當成 embedding 分數。
+目前已完成計算模組並接上生成流程。有效改寫會在輸出驗證通過後評估；評估失敗不讓改寫失敗，而是回傳 `semanticSimilarity: { status: 'unavailable', score: null, error }`。分數／模型／版本或評估錯誤隨改寫一起寫入 `renditions`。已建立本地繁體中文校準樣本與排序測試，真實 embedding 金鑰實測仍未完成，不可把舊 `scale` 字串直接當成 embedding 分數。
 
 驗證紀錄：繁中校準樣本涵蓋相同文字、同義改述、純語氣調整、否定翻轉、數字改動、刪除重要資訊及無關內容；離線測試使用人工向量驗證排序，不耗用真實金鑰。2026 年 9 月 5 日重新下載依賴時仍被 pnpm 最低發布時間政策阻擋，`node_modules/.bin` 未建立，因此本機完整 lint／typecheck／build 尚未完成。
 

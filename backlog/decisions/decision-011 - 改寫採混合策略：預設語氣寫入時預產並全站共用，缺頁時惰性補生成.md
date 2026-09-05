@@ -2,7 +2,7 @@
 id: decision-011
 title: 改寫採混合策略：預設語氣寫入時預產並全站共用，缺頁時惰性補生成
 date: '2026-09-05 03:13'
-status: accepted
+status: superseded
 ---
 > PRD：語氣改寫引擎 PRD（doc-002）
 

@@ -2,14 +2,19 @@ import { SEMANTIC_SIMILARITY_VERSION } from '../../../shared/types/semanticSimil
 import type { SemanticSimilarityError, SemanticSimilarityResult } from '../../../shared/types/semanticSimilarity.ts'
 
 export const DEFAULT_EMBEDDING_MODEL = 'text-embedding-3-small'
+const DEFAULT_EMBEDDINGS_URL = 'https://api.openai.com/v1/embeddings'
 
 export interface SemanticSimilarityInput {
   originalText: string
   rewrittenText: string
-  /** 必須是 OpenAI 可用金鑰，不可直接沿用其他生成供應商的金鑰。 */
+  /** 要能打 embeddingsUrl 所指服務的金鑰。 */
   apiKey: string | null
   model?: string
   timeoutMs?: number
+  /** 任何 OpenAI 相容的 embeddings 端點；預設 OpenAI 官方。 */
+  embeddingsUrl?: string
+  /** 端點專屬的額外參數（例如 NIM 的 input_type），原樣併進請求 body。 */
+  extraBody?: Record<string, unknown>
 }
 
 /** 先縮放再正規化，避免極大或極小的有限向量在平方運算時溢位或歸零。 */
@@ -71,12 +76,12 @@ export async function measureSemanticSimilarity(
   const signal = AbortSignal.timeout(timeoutMs)
   let payload: unknown
   try {
-    const response = await request('https://api.openai.com/v1/embeddings', {
+    const response = await request(input.embeddingsUrl ?? DEFAULT_EMBEDDINGS_URL, {
       method: 'POST',
       // 不跟隨重新導向，避免文字與金鑰被送往非預期端點。
       redirect: 'error',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${input.apiKey}` },
-      body: JSON.stringify({ model, input: [original, rewritten], encoding_format: 'float' }),
+      body: JSON.stringify({ ...input.extraBody, model, input: [original, rewritten], encoding_format: 'float' }),
       signal
     })
     if (response.status === 401 || response.status === 403) return unavailable('embedding_authentication_failed')

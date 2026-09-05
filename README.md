@@ -12,7 +12,7 @@
 ## 本機開發
 
 ```bash
-cp .env.example .env      # 填入 Neon 連線字串與金鑰
+cp .env.example .env      # 填入 Neon 連線字串與 NVIDIA API 金鑰（build.nvidia.com）
 pnpm install
 pnpm db:push              # 把 schema 推到 Neon 的 dev branch
 pnpm db:seed              # 預建 demo 帳號（複製 scripts/seed-users.example.json 為 seed-users.json 後改名單）
@@ -31,9 +31,9 @@ pnpm dev                  # http://localhost:3000
 | `app/` | Vue 前端（Nuxt 4，pages／components／composables） |
 | `server/api/` | HTTP 端點 |
 | `scripts/` | 預建帳號等一次性腳本 |
-| `server/utils/ai/` | 語氣改寫、金鑰解析、各家模型轉接 |
+| `server/utils/ai/` | 寫入時預產改寫、NVIDIA NIM 模型呼叫、輸出驗證與語意相似度 |
 | `server/db/` | Drizzle schema 與連線 |
-| `shared/` | 前後端共用的值域（語氣清單、provider） |
+| `shared/` | 前後端共用的值域（語氣清單、內容類型） |
 | `backlog/` | 任務、PRD 與決策紀錄 |
 
 ## 部署

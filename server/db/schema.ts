@@ -10,7 +10,6 @@ export const users = pgTable('users', {
   displayName: text('display_name').notNull(),
   password: text('password').notNull(),
   tone: text('tone'),
-  customInstruction: text('custom_instruction'),
   onboardedAt: timestamp('onboarded_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
 }, table => [uniqueIndex('users_username_key').on(table.username)])
@@ -58,8 +57,7 @@ export const messages = pgTable('messages', {
 }, table => [index('messages_conversation_idx').on(table.conversationId, table.createdAt, table.id)])
 
 /**
- * 改寫快取。預設語氣的改寫全站共用（同語氣所有讀者看到同一份），
- * 帶自訂指示的改寫只回給用戶端暫存，不寫入這張表。
+ * 每則內容在每個語氣下的改寫，寫入時預產、讀取時直接撈；同語氣所有讀者看到同一份。
  * 內容被刪時改寫沒有外鍵可 cascade（kind 不同表），由刪除端點順手清。
  */
 export const renditions = pgTable('renditions', {
@@ -67,8 +65,6 @@ export const renditions = pgTable('renditions', {
   kind: text('kind').notNull(),
   contentId: uuid('content_id').notNull(),
   tone: text('tone').notNull(),
-  // 目前只持久化純預設語氣；保留 instructionHash 讓舊資料與唯一索引維持相容
-  instructionHash: text('instruction_hash').notNull().default(''),
   text: text('text').notNull(),
   scale: text('scale').notNull(),
   semanticSimilarityScore: real('semantic_similarity_score'),
@@ -76,4 +72,4 @@ export const renditions = pgTable('renditions', {
   semanticSimilarityVersion: text('semantic_similarity_version'),
   semanticSimilarityError: text('semantic_similarity_error'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
-}, table => [uniqueIndex('renditions_key').on(table.kind, table.contentId, table.tone, table.instructionHash)])
+}, table => [uniqueIndex('renditions_key').on(table.kind, table.contentId, table.tone)])

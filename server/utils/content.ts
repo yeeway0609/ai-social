@@ -5,6 +5,7 @@ export interface LoadedContent {
   id: string
   authorId: string
   originalText: string
+  createdAt: Date
 }
 
 const TABLES = {
@@ -17,7 +18,7 @@ const TABLES = {
 export async function loadContent(kind: ContentKind, id: string): Promise<LoadedContent | null> {
   if (kind === 'message') {
     const [row] = await useDb()
-      .select({ id: schema.messages.id, authorId: schema.messages.senderId, originalText: schema.messages.originalText })
+      .select({ id: schema.messages.id, authorId: schema.messages.senderId, originalText: schema.messages.originalText, createdAt: schema.messages.createdAt })
       .from(schema.messages)
       .where(eq(schema.messages.id, id))
       .limit(1)
@@ -25,7 +26,7 @@ export async function loadContent(kind: ContentKind, id: string): Promise<Loaded
   }
   const table = TABLES[kind]
   const [row] = await useDb()
-    .select({ id: table.id, authorId: table.authorId, originalText: table.originalText })
+    .select({ id: table.id, authorId: table.authorId, originalText: table.originalText, createdAt: table.createdAt })
     .from(table)
     .where(eq(table.id, id))
     .limit(1)

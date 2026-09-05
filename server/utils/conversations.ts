@@ -1,5 +1,6 @@
 import { and, asc, eq, gt, ne, or, sql } from 'drizzle-orm'
 import { schema, useDb } from '../db'
+import { getViewerTone, isRenditionPending, renditionColumns, renditionJoin, toRendition } from './ai/render'
 import { userSummaryColumns } from './users'
 
 function orderPair(a: string, b: string) {
@@ -73,16 +74,19 @@ export async function listMessages(conversationId: string, viewerId: string, aft
     afterCreatedAt = anchor?.createdAt
   }
 
+  const viewerTone = await getViewerTone(viewerId)
   const rows = await db
     .select({
       id: schema.messages.id,
       senderId: schema.messages.senderId,
       originalText: schema.messages.originalText,
       createdAt: schema.messages.createdAt,
-      author: userSummaryColumns
+      author: userSummaryColumns,
+      ...renditionColumns
     })
     .from(schema.messages)
     .innerJoin(schema.users, eq(schema.users.id, schema.messages.senderId))
+    .leftJoin(schema.renditions, renditionJoin('message', schema.messages.id, viewerTone))
     .where(and(
       eq(schema.messages.conversationId, conversationId),
       afterCreatedAt && afterId
@@ -93,13 +97,16 @@ export async function listMessages(conversationId: string, viewerId: string, aft
 
   return rows.map((row) => {
     const isOwn = row.senderId === viewerId
+    const rendition = isOwn ? null : toRendition(row)
     return {
       id: row.id,
       conversationId,
       author: row.author,
       originalText: isOwn ? row.originalText : null,
       isOwn,
-      createdAt: row.createdAt.toISOString()
+      createdAt: row.createdAt.toISOString(),
+      rendition,
+      isRenditionPending: !isOwn && isRenditionPending(rendition, row.createdAt)
     }
   })
 }
@@ -121,6 +128,8 @@ export async function sendMessage(conversationId: string, senderId: string, text
     author: author!,
     originalText: text,
     isOwn: true,
-    createdAt: message!.createdAt.toISOString()
+    createdAt: message!.createdAt.toISOString(),
+    rendition: null,
+    isRenditionPending: false
   }
 }

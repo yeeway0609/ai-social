@@ -109,7 +109,9 @@ function handleSubmitSend() {
     author: user.value,
     originalText: text,
     isOwn: true,
-    createdAt: new Date().toISOString()
+    createdAt: new Date().toISOString(),
+    rendition: null,
+    isRenditionPending: false
   }
   messages.value = [...messages.value, temporary]
   scrollToBottom()

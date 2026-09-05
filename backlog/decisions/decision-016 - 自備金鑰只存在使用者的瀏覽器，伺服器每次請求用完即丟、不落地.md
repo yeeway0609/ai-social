@@ -2,7 +2,7 @@
 id: decision-016
 title: 自備金鑰只存在使用者的瀏覽器，伺服器每次請求用完即丟、不落地
 date: '2026-09-05 04:59'
-status: accepted
+status: superseded
 ---
 > PRD：AI Social 總覽 PRD（doc-001）、語氣改寫引擎 PRD（doc-002）
 

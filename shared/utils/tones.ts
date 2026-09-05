@@ -39,6 +39,3 @@ export const TONE_IDS = TONES.map(tone => tone.id) as [string, ...string[]]
 export function findTone(id: string): Tone | undefined {
   return TONES.find(tone => tone.id === id)
 }
-
-/** 自訂語氣指示的長度上限；它會整段進 prompt，太長既貴又容易蓋過不變量。 */
-export const MAX_CUSTOM_INSTRUCTION_LENGTH = 300

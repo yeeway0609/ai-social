@@ -11,6 +11,7 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "typecheck": "nuxt typecheck",
+    "test": "node --test tests/*.test.mjs",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
@@ -18,7 +19,6 @@
     "db:seed": "node --env-file=.env scripts/seed.ts"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.123.0",
     "@neondatabase/serverless": "^1.1.0",
     "@nuxt/ui": "^4.11.0",
     "@vueuse/core": "^14.3.0",

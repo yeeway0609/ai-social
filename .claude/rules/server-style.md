@@ -19,7 +19,7 @@ paths:
 
 ## 錯誤處理
 
-- 預期中的失敗用 `createError({ statusCode, statusMessage })`；`statusMessage` 用機器可讀的 snake_case 錯誤碼（`unauthenticated`、`no_ai_credential`），前端據此分流。
+- 預期中的失敗用 `createError({ statusCode, statusMessage })`；`statusMessage` 用機器可讀的 snake_case 錯誤碼（`unauthenticated`、`content_not_found`），前端據此分流。
 - **領域錯誤定義成 class 並帶 `code`**（見 `NoCredentialError`），由路由決定映射到哪個狀態碼——同一個領域錯誤在不同端點可能該回 401 也可能該回 402。
 - **catch 具體例外**，不寫 `catch (e)` 就吞掉。外部模型 API 的逾時與額度用盡要各自捕捉並轉成對應錯誤碼，因為前端對這兩者的處置完全不同（重試 vs 導去設定金鑰）。
 

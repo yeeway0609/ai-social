@@ -30,6 +30,8 @@ export default defineEventHandler(async (event): Promise<CommentSummary> => {
     author: author!,
     originalText: text,
     isOwn: true,
-    createdAt: comment!.createdAt.toISOString()
+    createdAt: comment!.createdAt.toISOString(),
+    rendition: null,
+    isRenditionPending: false
   }
 })

@@ -1,91 +1,79 @@
-import { createHash } from 'node:crypto'
 import { and, eq } from 'drizzle-orm'
+import type { AnyPgColumn } from 'drizzle-orm/pg-core'
 import type { H3Event } from 'h3'
 import { schema, useDb } from '../../db'
 import { loadContent, type LoadedContent } from '../content'
-import { readOwnCredential, resolveCredential, resolvePoolCredential, type ResolvedCredential } from './credentials'
-import { buildSystemPrompt, wrapOriginal } from './prompt'
 import { InvalidRenditionError, validateRenditionText } from './outputValidation'
-import { classifyProviderError, modelFor, REWRITE_FNS } from './providers'
+import { NVIDIA_BASE_URL, classifyProviderError, rewrite } from './nvidia'
+import { buildSystemPrompt, wrapOriginal } from './prompt'
 import { measureRewriteScale } from './scale'
-import { DEFAULT_EMBEDDING_MODEL, measureSemanticSimilarity } from './semanticSimilarity'
-import { parseRenderBatchRequest, validateRenderResultIdentities } from '../../../shared/utils/renderContract'
-import type { RenderBatchRequest, RenderBatchResult } from '../../../shared/types/api'
+import { measureSemanticSimilarity } from './semanticSimilarity'
+import type { Rendition, RenditionError } from '../../../shared/types/api'
 import type { SemanticSimilarityError, SemanticSimilarityResult } from '../../../shared/types/semanticSimilarity'
 
 const RENDER_TIMEOUT_MS = 10_000
 
-export class ContentNotFoundError extends Error {
-  readonly code = 'content_not_found'
-}
-
-interface GeneratedRendition {
-  text: string
-  scale: RewriteScale
-  semanticSimilarity: SemanticSimilarityResult
-}
-
 class GenerationFailure extends Error {
-  readonly code: NonNullable<RenditionResult['error']>
+  readonly code: RenditionError
 
-  constructor(code: NonNullable<RenditionResult['error']>) {
+  constructor(code: RenditionError) {
     super(code)
     this.code = code
   }
 }
 
-function hashInstruction(customInstruction: string | null) {
-  return customInstruction ? createHash('sha256').update(customInstruction).digest('hex') : ''
+/** 列表查詢 left join renditions 時要選的欄位；沒命中時整組都是 null。 */
+export const renditionColumns = {
+  renditionText: schema.renditions.text,
+  renditionScale: schema.renditions.scale,
+  semanticSimilarityScore: schema.renditions.semanticSimilarityScore,
+  semanticSimilarityModel: schema.renditions.semanticSimilarityModel,
+  semanticSimilarityVersion: schema.renditions.semanticSimilarityVersion,
+  semanticSimilarityError: schema.renditions.semanticSimilarityError
 }
 
-async function readCache(kind: ContentKind, contentId: string, tone: string, instructionHash: string) {
-  const [row] = await useDb()
-    .select({
-      text: schema.renditions.text,
-      scale: schema.renditions.scale,
-      semanticSimilarityScore: schema.renditions.semanticSimilarityScore,
-      semanticSimilarityModel: schema.renditions.semanticSimilarityModel,
-      semanticSimilarityVersion: schema.renditions.semanticSimilarityVersion,
-      semanticSimilarityError: schema.renditions.semanticSimilarityError
-    })
-    .from(schema.renditions)
-    .where(and(
-      eq(schema.renditions.kind, kind),
-      eq(schema.renditions.contentId, contentId),
-      eq(schema.renditions.tone, tone),
-      eq(schema.renditions.instructionHash, instructionHash)
-    ))
-    .limit(1)
-  return row ? { text: row.text, scale: row.scale as RewriteScale, semanticSimilarity: readSemanticSimilarity(row) } : null
+type RenditionRow = { [K in keyof typeof renditionColumns]: string | number | null }
+
+/** 給 leftJoin 用：這則內容在讀者語氣下的那一列；讀者沒語氣就給永遠不成立的條件。 */
+export function renditionJoin(kind: ContentKind, contentId: AnyPgColumn, viewerTone: string | null) {
+  return and(
+    eq(schema.renditions.kind, kind),
+    eq(schema.renditions.contentId, contentId),
+    viewerTone ? eq(schema.renditions.tone, viewerTone) : eq(schema.renditions.tone, '')
+  )!
 }
 
-async function writeCache(kind: ContentKind, contentId: string, tone: string, instructionHash: string, generated: GeneratedRendition) {
-  // 兩個讀者同時觸發同一份改寫時，後到的那份直接丟掉，兩邊看到的字句可能不同但之後都以先存的為準
-  await useDb()
-    .insert(schema.renditions)
-    .values({
-      kind,
-      contentId,
-      tone,
-      instructionHash,
-      text: generated.text,
-      scale: generated.scale,
-      ...writeSemanticSimilarity(generated.semanticSimilarity)
-    })
-    .onConflictDoNothing()
-}
-
-function readSemanticSimilarity(row: {
-  semanticSimilarityScore: number | null
-  semanticSimilarityModel: string | null
-  semanticSimilarityVersion: string | null
-  semanticSimilarityError: string | null
-}): SemanticSimilarityResult | null {
+function readSemanticSimilarity(row: RenditionRow): SemanticSimilarityResult | null {
   if (row.semanticSimilarityError) {
     return { status: 'unavailable', score: null, error: row.semanticSimilarityError as SemanticSimilarityError }
   }
-  if (row.semanticSimilarityScore === null || !row.semanticSimilarityModel || row.semanticSimilarityVersion !== 'cosine-nfc-v1') return null
-  return { status: 'ok', score: row.semanticSimilarityScore, model: row.semanticSimilarityModel, version: 'cosine-nfc-v1' }
+  if (typeof row.semanticSimilarityScore !== 'number' || !row.semanticSimilarityModel || row.semanticSimilarityVersion !== 'cosine-nfc-v1') return null
+  return { status: 'ok', score: row.semanticSimilarityScore, model: String(row.semanticSimilarityModel), version: 'cosine-nfc-v1' }
+}
+
+export function toRendition(row: RenditionRow): Rendition | null {
+  if (typeof row.renditionText !== 'string' || typeof row.renditionScale !== 'string') return null
+  return { text: row.renditionText, scale: row.renditionScale as RewriteScale, semanticSimilarity: readSemanticSimilarity(row) }
+}
+
+/** 內容剛寫入、背景預產可能還沒跑完；超過這段時間仍沒有改寫就當預產失敗，直接給原文。 */
+export function isRenditionPending(rendition: Rendition | null, createdAt: Date) {
+  return rendition === null && Date.now() - createdAt.getTime() < RENDITION_PENDING_WINDOW_MS
+}
+
+export async function getViewerTone(viewerId: string): Promise<string | null> {
+  const [viewer] = await useDb().select({ tone: schema.users.tone }).from(schema.users).where(eq(schema.users.id, viewerId)).limit(1)
+  // 值域外的舊值退到目前預設語氣，避免舊帳號突然只看到原文
+  return viewer?.tone ? (findTone(viewer.tone) ?? TONES[0]!).id : null
+}
+
+export async function lookupRendition(kind: ContentKind, contentId: string, tone: string): Promise<Rendition | null> {
+  const [row] = await useDb()
+    .select(renditionColumns)
+    .from(schema.renditions)
+    .where(and(eq(schema.renditions.kind, kind), eq(schema.renditions.contentId, contentId), eq(schema.renditions.tone, tone)))
+    .limit(1)
+  return row ? toRendition(row) : null
 }
 
 function writeSemanticSimilarity(semanticSimilarity: SemanticSimilarityResult) {
@@ -97,42 +85,32 @@ function writeSemanticSimilarity(semanticSimilarity: SemanticSimilarityResult) {
       semanticSimilarityError: null
     }
   }
-  return {
-    semanticSimilarityScore: null,
-    semanticSimilarityModel: null,
-    semanticSimilarityVersion: null,
-    semanticSimilarityError: semanticSimilarity.error
-  }
+  return { semanticSimilarityScore: null, semanticSimilarityModel: null, semanticSimilarityVersion: null, semanticSimilarityError: semanticSimilarity.error }
 }
 
-async function measureGeneratedSimilarity(content: LoadedContent, text: string, ownCredential: ResolvedCredential | null): Promise<SemanticSimilarityResult> {
-  const credential = ownCredential?.provider === 'openai' ? ownCredential : resolvePoolCredential('openai')
+/** embedding 也走 NIM；沒設金鑰時只是相似度不可用，不影響改寫本身。 */
+function measureGeneratedSimilarity(content: LoadedContent, text: string): Promise<SemanticSimilarityResult> {
+  const { ai } = useRuntimeConfig()
   return measureSemanticSimilarity({
     originalText: content.originalText,
     rewrittenText: text,
-    apiKey: credential?.apiKey ?? null,
-    model: DEFAULT_EMBEDDING_MODEL
+    apiKey: ai.nvidiaApiKey || null,
+    model: ai.embeddingModel,
+    embeddingsUrl: `${NVIDIA_BASE_URL}/embeddings`,
+    // NIM 的檢索型 embedding 模型要求標明輸入角色，兩段都當 passage 才會落在同一向量空間
+    extraBody: { input_type: 'passage', truncate: 'END' }
   })
 }
 
-async function generate(content: LoadedContent, tone: Tone, customInstruction: string | null, credential: ResolvedCredential, ownCredential: ResolvedCredential | null): Promise<GeneratedRendition> {
+async function generate(content: LoadedContent, tone: Tone): Promise<Rendition> {
   const { ai } = useRuntimeConfig()
   if (ai.mock) return { text: `（${tone.label}）${content.originalText}`, scale: 'light', semanticSimilarity: { status: 'unavailable', score: null, error: 'no_embedding_credential' } }
 
   let text: string
   try {
-    text = await REWRITE_FNS[credential.provider]({
-      apiKey: credential.apiKey,
-      model: modelFor(credential.provider, credential.model),
-      system: buildSystemPrompt(tone, customInstruction),
-      original: wrapOriginal(content.originalText),
-      timeoutMs: RENDER_TIMEOUT_MS,
-      temperature: credential.temperature,
-      maxOutputTokens: credential.maxOutputTokens,
-      baseUrl: credential.baseUrl
-    })
+    text = await rewrite({ system: buildSystemPrompt(tone), original: wrapOriginal(content.originalText), timeoutMs: RENDER_TIMEOUT_MS })
   } catch (err) {
-    throw new GenerationFailure(classifyProviderError(err) ?? 'provider_error')
+    throw new GenerationFailure(classifyProviderError(err))
   }
   try {
     validateRenditionText(content.originalText, text)
@@ -140,100 +118,34 @@ async function generate(content: LoadedContent, tone: Tone, customInstruction: s
     if (err instanceof InvalidRenditionError) throw new GenerationFailure(err.code)
     throw err
   }
-  return {
-    text,
-    scale: measureRewriteScale(content.originalText, text),
-    semanticSimilarity: await measureGeneratedSimilarity(content, text, ownCredential)
-  }
+  return { text, scale: measureRewriteScale(content.originalText, text), semanticSimilarity: await measureGeneratedSimilarity(content, text) }
 }
 
 /**
- * 改寫服務的唯一入口：給一則內容與一位讀者，回那位讀者該看到的樣子。
- * 預設語氣先查快取，沒有才生成並存回；自訂指示必須有自備金鑰，其結果以指示雜湊另存。
- * 失敗一律退回原文並帶錯誤碼，不丟例外——feed 上任何一則都不能因為模型出問題而變空白。
+ * 改寫只在這裡產生：內容寫入後對每個預設語氣各存一份，讀者之後直接撈、不再呼叫模型。
+ * 已有的語氣略過，所以補跑是安全的；失敗的語氣留空，讀者看到原文。
+ * 訊息只需要收件人當下的語氣，傳 toneIds 限制範圍。
  */
-export async function renderContent(kind: ContentKind, id: string, viewerId: string, ownCredential: ResolvedCredential | null): Promise<RenditionResult> {
-  const content = await loadContent(kind, id)
-  if (!content) throw new ContentNotFoundError()
-
-  const original = (error: RenditionResult['error'] = null, source: CredentialSource | null = null): RenditionResult =>
-    ({ kind, id, text: content.originalText, isOriginal: true, scale: null, semanticSimilarity: null, source, error })
-
-  if (content.authorId === viewerId) return original()
-
-  const [viewer] = await useDb()
-    .select({ tone: schema.users.tone, customInstruction: schema.users.customInstruction })
-    .from(schema.users)
-    .where(eq(schema.users.id, viewerId))
-    .limit(1)
-  // tone 為 null 代表尚未完成引導設定；值域外的舊值退到目前預設語氣，避免舊帳號突然只看到原文
-  const tone = viewer?.tone ? (findTone(viewer.tone) ?? TONES[0]) : undefined
-  if (!tone) return original()
-
-  const credential = resolveCredential(ownCredential)
-  // 自訂指示只在這次請求帶了自備金鑰時生效；沒帶就退回純預設語氣的共用快取
-  const customInstruction = credential?.source === 'own' ? (viewer?.customInstruction ?? null) : null
-  const instructionHash = hashInstruction(customInstruction)
-  const shouldPersist = !customInstruction
-
-  const cached = shouldPersist ? await readCache(kind, id, tone.id, instructionHash) : null
-  if (cached) {
-    return { kind, id, text: cached.text, isOriginal: false, scale: cached.scale, semanticSimilarity: cached.semanticSimilarity, source: null, error: null }
-  }
-
-  if (!credential) return original('no_ai_credential')
-
-  try {
-    const generated = await generate(content, tone, customInstruction, credential, ownCredential)
-    if (shouldPersist) await writeCache(kind, id, tone.id, instructionHash, generated)
-    return {
-      kind,
-      id,
-      text: generated.text,
-      isOriginal: false,
-      scale: generated.scale,
-      semanticSimilarity: generated.semanticSimilarity,
-      source: credential.source,
-      error: null
-    }
-  } catch (err) {
-    if (err instanceof GenerationFailure) return original(err.code, credential.source)
-    throw err
-  }
-}
-
-/** 批次協調層保持請求順序；單篇模型失敗回原文，不讓其他篇一起失敗。 */
-export async function renderContentBatch(request: RenderBatchRequest, viewerId: string, ownCredential: ResolvedCredential | null): Promise<RenderBatchResult> {
-  const normalized = parseRenderBatchRequest(request)
-  const items = await Promise.all(normalized.items.map(async item => ({
-    ...await renderContent(item.kind, item.id, viewerId, ownCredential)
-  })))
-  validateRenderResultIdentities(normalized, items)
-  return { version: 'rendition-batch-v1', items }
-}
-
-/**
- * 內容寫入時預先產出所有預設語氣的改寫，讀者捲到時直接命中快取。
- * 燒的是請求帶來的自備金鑰（作者瀏覽器裡的那把）、其次共用池。
- * 任何一個語氣失敗就略過，讀者端會惰性補生成。訊息只需要收件人當下的語氣，傳 toneIds 限制範圍。
- */
-export async function pregenerateRenditions(kind: ContentKind, id: string, ownCredential: ResolvedCredential | null, toneIds?: string[]) {
+export async function pregenerateRenditions(kind: ContentKind, id: string, toneIds?: string[]) {
   const content = await loadContent(kind, id)
   if (!content) return { generated: 0, failed: 0 }
-
-  const credential = resolveCredential(ownCredential)
-  if (!credential) return { generated: 0, failed: 0 }
 
   const targets = TONES.filter(tone => !toneIds || toneIds.includes(tone.id))
   let generated = 0
   let failed = 0
   await Promise.all(targets.map(async (tone) => {
-    if (await readCache(kind, id, tone.id, '')) return
+    if (await lookupRendition(kind, id, tone.id)) return
     try {
-      await writeCache(kind, id, tone.id, '', await generate(content, tone, null, credential, ownCredential))
+      const rendition = await generate(content, tone)
+      // 兩個寫入者同時預產同一份時，後到的直接丟掉，之後都以先存的為準
+      await useDb()
+        .insert(schema.renditions)
+        .values({ kind, contentId: id, tone: tone.id, text: rendition.text, scale: rendition.scale, ...writeSemanticSimilarity(rendition.semanticSimilarity ?? { status: 'unavailable', score: null, error: 'invalid_input' }) })
+        .onConflictDoNothing()
       generated++
-    } catch {
+    } catch (err) {
       failed++
+      console.warn(`[renditions] ${kind}/${id} ${tone.id} 預產失敗：${err instanceof GenerationFailure ? err.code : 'unknown'}`)
     }
   }))
   return { generated, failed }
@@ -241,7 +153,7 @@ export async function pregenerateRenditions(kind: ContentKind, id: string, ownCr
 
 /** 寫入端點用：回應先送出，預產在背景跑；平台不支援 waitUntil 時退回同步等待。 */
 export function schedulePregeneration(event: H3Event, kind: ContentKind, id: string, toneIds?: string[]) {
-  const work = pregenerateRenditions(kind, id, readOwnCredential(event), toneIds).catch(() => undefined)
+  const work = pregenerateRenditions(kind, id, toneIds).catch(() => undefined)
   if (typeof event.waitUntil === 'function') event.waitUntil(work)
   return work
 }

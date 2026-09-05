@@ -12,7 +12,6 @@ export async function getCurrentUser(userId: string): Promise<CurrentUser | null
     .select({
       ...userSummaryColumns,
       tone: schema.users.tone,
-      customInstruction: schema.users.customInstruction,
       onboardedAt: schema.users.onboardedAt
     })
     .from(schema.users)

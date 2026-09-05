@@ -1,7 +1,6 @@
 import { and, eq, ne } from 'drizzle-orm'
 import { z } from 'zod'
 import { schema, useDb } from '../../db'
-import { readOwnCredential } from '../../utils/ai/credentials'
 import { pregenerateRenditions } from '../../utils/ai/render'
 import { secretEquals } from '../../utils/crypto'
 import { TONES } from '../../../shared/utils/tones'
@@ -46,7 +45,6 @@ export default defineEventHandler(async (event) => {
   }
   const { limit } = body.parse((await readBody(event).catch(() => null)) ?? {})
   const db = useDb()
-  const ownCredential = readOwnCredential(event)
 
   const postRows = await db
     .select({ id: schema.posts.id, authorId: schema.posts.authorId, tone: schema.renditions.tone })
@@ -63,14 +61,14 @@ export default defineEventHandler(async (event) => {
 
   let generated = 0
   let failed = 0
-  // 內容之間串行、每則內部預設語氣並行：兼顧速度與不把金鑰池打到 rate limit
+  // 內容之間串行、每則內部預設語氣並行：兼顧速度與不撞 NIM 的 rate limit
   for (const post of pendingPosts) {
-    const result = await pregenerateRenditions('post', post.id, ownCredential)
+    const result = await pregenerateRenditions('post', post.id)
     generated += result.generated
     failed += result.failed
   }
   for (const comment of pendingComments) {
-    const result = await pregenerateRenditions('comment', comment.id, ownCredential)
+    const result = await pregenerateRenditions('comment', comment.id)
     generated += result.generated
     failed += result.failed
   }

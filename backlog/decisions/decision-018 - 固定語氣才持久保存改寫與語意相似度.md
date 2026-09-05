@@ -2,7 +2,7 @@
 id: decision-018
 title: 固定語氣才持久保存改寫與語意相似度
 date: '2026-09-05 07:51'
-status: accepted
+status: superseded
 ---
 > PRD：語氣改寫引擎 PRD（doc-002）
 

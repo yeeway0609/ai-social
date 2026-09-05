@@ -39,9 +39,9 @@
 
 ### 改寫（rendition）
 
-一則內容（貼文、留言、訊息）在某個語氣下的 AI 產出結果。預設語氣的改寫全站共用並存進資料庫；帶自訂語氣指示的改寫只在用戶端暫存，不進平台資料庫。
+一則內容（貼文、留言、訊息）在某個語氣下的 AI 產出結果。寫入時對每個語氣預產並存進資料庫、全站共用；讀取時直接撈，不再呼叫模型。
 
-- 識別碼：`renditions` 資料表、`RenditionResult`、`renderContent()`、`renderContentBatch()`、`pregenerateRenditions()`
+- 識別碼：`renditions` 資料表、`Rendition`、`ContentSummary.rendition`、`pregenerateRenditions()`、`lookupRendition()`
 - 避免：「翻譯」（會誤導成語言轉換）、「潤稿」（暗示原文有瑕疵）、「版本」（`revision` 另指編輯歷史，本專案沒有這概念）
 
 ### 改寫幅度
@@ -67,33 +67,19 @@
 
 ## 模型與金鑰
 
-### 供應商（provider）
+### 改寫模型（rewrite model）
 
-提供改寫模型的廠商。本平台不綁單一家。
+平台統一使用的模型：NVIDIA NIM 提供的 Nemotron 3.5 Lightning，走 OpenAI 相容端點。金鑰只放伺服器環境變數，所有使用者共用；使用者不填、也看不到金鑰。
 
-- 識別碼：`AiProvider`、值域見 `shared/ai.ts`
-- 避免：「vendor」、「廠商」不一致混用
+- 識別碼：`rewrite()`（`server/utils/ai/nvidia.ts`）、環境變數 `NUXT_AI_NVIDIA_API_KEY`／`NUXT_AI_MODEL`／`NUXT_AI_EMBEDDING_MODEL`／`NUXT_AI_TEMPERATURE`
+- 避免：「供應商」「provider」（已不再多家並存）、「自備金鑰」「共用池」（已移除的舊機制）
 
-### 自備金鑰（own credential）
+### 預產中（rendition pending）
 
-使用者自己填入的 API key。只存在使用者的瀏覽器（localStorage），隨每次改寫請求以標頭送到伺服器、用完即丟；平台不保存。
+內容剛寫入、背景預產可能還沒跑完的狀態：改寫尚不存在且寫入未滿 60 秒。前端顯示骨架並輪詢；超過等待期仍沒有改寫就視為預產失敗，顯示原文。
 
-- 識別碼：`OwnCredential`、`useOwnCredential()`、`CredentialSource` 的 `own`、標頭 `x-ai-provider`／`x-ai-key`（另有 `x-ai-model`、`x-ai-temperature`、`x-ai-max-output-tokens`、`x-ai-base-url`）
-- 避免：「BYOK」（縮寫，非行業慣例到可直接使用的程度）
-
-### 共用池（pool）
-
-團隊提供、所有沒自備金鑰的使用者共享的金鑰集合。demo 現場可能耗盡。
-
-- 識別碼：`CredentialSource` 的 `pool`、環境變數 `NUXT_AI_POOL_*`
-- 避免：「額度」（指的是池裡的 token 數，不是池本身）
-
-### 自訂語氣指示（custom instruction）
-
-讀者自己寫的一段自由文字，疊加在所選預設語氣之上一起交給模型。
-
-- 識別碼：`customInstruction`、`users.custom_instruction`
-- 避免：「system prompt」（那是實作層的東西，讀者填的只是其中一段）、「prompt」
+- 識別碼：`isRenditionPending`、`RENDITION_PENDING_WINDOW_MS`、`/api/renditions`
+- 避免：「載入中」（那是網路請求狀態，不是改寫尚未產出）
 
 ### 引導設定（onboarding）
 
