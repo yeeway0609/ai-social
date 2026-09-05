@@ -1,7 +1,7 @@
 /**
  * 呼叫本機或 Preview 的預產端點，把所有還沒改寫的貼文與留言灌好預設語氣。
  * 用法：pnpm prerender <username> [base-url]
- *   username：用這個帳號在設定頁存的自備金鑰（例如地端模型）產所有內容
+ *   username：用這個帳號在設定頁存的自備金鑰產所有內容
  *   base-url：dev server 位址，預設 http://localhost:3000
  */
 const secret = process.env.NUXT_ADMIN_SECRET

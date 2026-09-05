@@ -12,8 +12,6 @@ export type RewriteFn = (args: {
   system: string
   original: string
   timeoutMs: number
-  /** 自架模型的端點；其他供應商忽略。 */
-  baseUrl?: string
 }) => Promise<string>
 
 const anthropic: RewriteFn = async ({ apiKey, model, system, original, timeoutMs }) => {
@@ -53,31 +51,11 @@ const openrouter: RewriteFn = async ({ apiKey, model, system, original, timeoutM
   return response.choices[0]?.message.content?.trim() ?? ''
 }
 
-/**
- * 自架模型（例如 Qwen3）走 OpenAI Responses 相容端點。
- * Qwen3 這類有思考模式的模型可能把 <think> 段落夾在輸出裡，改寫只要最後的正文。
- */
-const local: RewriteFn = async ({ apiKey, model, system, original, timeoutMs, baseUrl }) => {
-  const endpoint = baseUrl || useRuntimeConfig().ai.localBaseUrl
-  if (!endpoint) throw new Error('地端模型沒有端點：使用者未填 base URL 且 NUXT_AI_LOCAL_BASE_URL 未設定')
-  const response = await new OpenAI({ apiKey, baseURL: endpoint, timeout: timeoutMs, maxRetries: 0 }).responses.create({
-    model,
-    instructions: system,
-    input: original
-  })
-  return stripThinking(response.output_text)
-}
+export const REWRITE_FNS: Record<AiProvider, RewriteFn> = { anthropic, openai, openrouter }
 
-function stripThinking(text: string) {
-  return text.replace(/<think>[\s\S]*?<\/think>/g, '').trim()
-}
-
-export const REWRITE_FNS: Record<AiProvider, RewriteFn> = { anthropic, openai, openrouter, local }
-
-/** 使用者自備金鑰可附帶模型名稱（自架模型必填），沒有就用環境設定。 */
-export function modelFor(provider: AiProvider, override?: string) {
+export function modelFor(provider: AiProvider) {
   const { ai } = useRuntimeConfig()
-  return override || { anthropic: ai.modelAnthropic, openai: ai.modelOpenai, openrouter: ai.modelOpenrouter, local: ai.modelLocal }[provider]
+  return { anthropic: ai.modelAnthropic, openai: ai.modelOpenai, openrouter: ai.modelOpenrouter }[provider]
 }
 
 /** SDK 的逾時與額度錯誤各自對應不同的前端處置（重試 vs 導去設定金鑰），所以分開辨識。 */

@@ -14,9 +14,6 @@ export interface ResolvedCredential {
   provider: AiProvider
   apiKey: string
   source: CredentialSource
-  /** 自架模型的端點與模型名稱；沒有就用環境設定。 */
-  baseUrl?: string
-  model?: string
 }
 
 /**
@@ -27,7 +24,7 @@ let poolCursor = 0
 
 function pool(provider: AiProvider): string[] {
   const { ai } = useRuntimeConfig()
-  const raw = { anthropic: ai.poolAnthropic, openai: ai.poolOpenai, openrouter: ai.poolOpenrouter, local: ai.poolLocal }[provider]
+  const raw = { anthropic: ai.poolAnthropic, openai: ai.poolOpenai, openrouter: ai.poolOpenrouter }[provider]
   return raw.split(',').map(k => k.trim()).filter(Boolean)
 }
 
@@ -43,7 +40,7 @@ export async function resolveCredential(
 ): Promise<ResolvedCredential | null> {
   if (userId) {
     const [row] = await useDb()
-      .select({ encrypted: schema.aiCredentials.encrypted, baseUrl: schema.aiCredentials.baseUrl, model: schema.aiCredentials.model })
+      .select({ encrypted: schema.aiCredentials.encrypted })
       .from(schema.aiCredentials)
       .where(and(
         eq(schema.aiCredentials.userId, userId),
@@ -52,7 +49,7 @@ export async function resolveCredential(
       .limit(1)
 
     if (row) {
-      return { provider, apiKey: unseal(row.encrypted as SealedSecret), source: 'own', baseUrl: row.baseUrl ?? undefined, model: row.model ?? undefined }
+      return { provider, apiKey: unseal(row.encrypted as SealedSecret), source: 'own' }
     }
   }
 
@@ -65,7 +62,7 @@ export async function resolveCredential(
 
 /**
  * 讀者沒指定供應商時用這支：有自備金鑰就優先用自備的（多把時偏好環境預設的那家），
- * 都沒有才用環境預設供應商的共用池。這樣使用者填了地端模型的金鑰，就會實際走地端模型。
+ * 都沒有才用環境預設供應商的共用池。這樣使用者填了哪家的金鑰，改寫就實際走那家。
  */
 export async function resolveViewerCredential(userId: string | null): Promise<ResolvedCredential | null> {
   const { ai } = useRuntimeConfig()

@@ -37,13 +37,9 @@ export default defineNuxtConfig({
       poolAnthropic: '',
       poolOpenai: '',
       poolOpenrouter: '',
-      poolLocal: '',
       modelAnthropic: 'claude-haiku-4-5-20251001',
       modelOpenai: 'gpt-5-mini',
       modelOpenrouter: 'meta-llama/llama-3.3-70b-instruct:free',
-      // 自架模型：OpenAI Responses 相容端點的 base URL 與模型（instance）名稱
-      localBaseUrl: '',
-      modelLocal: '',
       // 沒有金鑰時的本機替身：改寫只是在原文前加語氣標記，讓 UI 流程走得通
       mock: false
     },

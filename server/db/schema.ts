@@ -27,9 +27,6 @@ export const aiCredentials = pgTable('ai_credentials', {
   encrypted: jsonb('encrypted').notNull(),
   // 給使用者辨識用的尾四碼，例如 ...4f2a
   hint: text('hint').notNull(),
-  // 自架模型才有：使用者自己指定端點與模型名稱，不是秘密所以明文存
-  baseUrl: text('base_url'),
-  model: text('model'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
 }, table => [uniqueIndex('ai_credentials_user_provider_key').on(table.userId, table.provider)])
 

@@ -9,15 +9,9 @@ const { data: credentials, refresh: refreshCredentials } = await useAsyncData('m
 
 const provider = ref<AiProvider>('anthropic')
 const apiKey = ref('')
-const baseUrl = ref('')
-const model = ref('')
 const isSavingKey = ref(false)
 
-const isLocalProvider = computed(() => provider.value === 'local')
-const canSaveKey = computed(() => {
-  if (apiKey.value.trim().length < 8) return false
-  return !isLocalProvider.value || (baseUrl.value.trim().length > 0 && model.value.trim().length > 0)
-})
+const canSaveKey = computed(() => apiKey.value.trim().length >= 20)
 
 const providerItems = AI_PROVIDERS.map(id => ({ label: AI_PROVIDER_LABELS[id], value: id }))
 
@@ -30,10 +24,6 @@ async function handleSubmitKey() {
   isSavingKey.value = true
   try {
     const body: CredentialCreate = { provider: provider.value, apiKey: apiKey.value.trim() }
-    if (isLocalProvider.value) {
-      body.baseUrl = baseUrl.value.trim()
-      body.model = model.value.trim()
-    }
     await $fetch('/api/me/credentials', { method: 'POST', body })
     apiKey.value = ''
     credentialWarning.dismiss()
@@ -89,10 +79,6 @@ async function handleClickDeleteKey(target: AiProvider) {
         >
           <span class="min-w-0">
             {{ AI_PROVIDER_LABELS[credential.provider] }} <span class="font-mono text-muted">…{{ credential.hint }}</span>
-            <span
-              v-if="credential.baseUrl"
-              class="block truncate text-xs text-muted"
-            >{{ credential.model }} @ {{ credential.baseUrl }}</span>
           </span>
           <UButton
             color="neutral"
@@ -114,21 +100,6 @@ async function handleClickDeleteKey(target: AiProvider) {
           orientation="horizontal"
           :items="providerItems"
         />
-        <template v-if="isLocalProvider">
-          <UInput
-            v-model="baseUrl"
-            class="w-full"
-            type="url"
-            autocomplete="off"
-            placeholder="API base URL，例如 https://your-gateway.example.com/v1"
-          />
-          <UInput
-            v-model="model"
-            class="w-full"
-            autocomplete="off"
-            placeholder="模型／instance 名稱"
-          />
-        </template>
         <UInput
           v-model="apiKey"
           class="w-full"

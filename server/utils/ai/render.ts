@@ -59,11 +59,10 @@ async function generate(content: LoadedContent, tone: Tone, customInstruction: s
   try {
     text = await REWRITE_FNS[credential.provider]({
       apiKey: credential.apiKey,
-      model: modelFor(credential.provider, credential.model),
+      model: modelFor(credential.provider),
       system: buildSystemPrompt(tone, customInstruction),
       original: wrapOriginal(content.originalText),
-      timeoutMs: RENDER_TIMEOUT_MS,
-      baseUrl: credential.baseUrl
+      timeoutMs: RENDER_TIMEOUT_MS
     })
   } catch (err) {
     throw new GenerationFailure(classifyProviderError(err) ?? 'provider_error')
