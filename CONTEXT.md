@@ -6,16 +6,15 @@
 
 正式名稱是 **不痛 Tone**（「不痛」＋「Tone」，讀起來像「不痛痛」），視覺意象是**安全帽**：戴上它，別人的話砸下來就不痛。品牌標誌在 `app/components/BrandLogo.vue`，favicon 在 `public/favicon.svg`。
 
-程式識別碼維持 `ai-social`，不跟著改名——它只出現在機器看的地方，改了只會讓既有登入狀態失效：
+程式識別碼一律用 `butong-tone`，與產品名一致，方便從任何一端 grep 到另一端：
 
 | 位置 | 值 |
 |---|---|
-| `package.json` 的 `name` | `ai-social` |
-| `nuxt.config.ts` 的 `colorMode.storageKey` | `ai-social-color-mode` |
-| `server/utils/session.ts` 的 `COOKIE` | `ai-social-session` |
-| GitHub repo | `yeeway0609/ai-social` |
-| Vercel project | `ai-social` |
-| Neon resource | `ai-social-db` |
+| `package.json` 的 `name` | `butong-tone` |
+| `server/utils/session.ts` 的 `COOKIE` | `butong-tone-session` |
+| GitHub repo | `yeeway0609/butong-tone` |
+| Vercel project | `butong-tone` |
+| Neon resource | `ai-social-db`（Vercel Marketplace 開的資源無法改名，是唯一保留舊名的地方） |
 
 使用者看得到的地方（頁首、登入頁、瀏覽器分頁標題、`README.md`、`CLAUDE.md`、backlog 的 `project_name`）一律寫「不痛 Tone」，中英之間留一個半形空格。
 

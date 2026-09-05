@@ -10,13 +10,13 @@
 </p>
 
 <p align="center">
-  <a href="https://ai-social-alex-sus-projects.vercel.app">線上 Demo</a>｜
+  <a href="https://butong-tone-alex-sus-projects.vercel.app">線上 Demo</a>｜
   <a href="#技術架構">技術架構</a>｜
   <a href="#執行方式">執行方式</a>｜
   <a href="#來源說明">來源說明</a>
 </p>
 
-> BUILDMODE GEN-AI HACKATHON 2026（FUTUREMODE × SITCON）參賽作品，2026.09.04–06 於台北花博爭艷館開發。
+> BUILDMODE GEN-AI HACKATHON 2026（FUTUREMODE × SITCON）參賽作品
 
 ---
 
@@ -27,11 +27,11 @@
 **不痛 Tone** 在作者與讀者之間加一層語氣層：
 
 - **原文只有一份。** 貼文、留言、私訊一律以原話存進資料庫，沒有 AI 潤飾、沒有預覽，作者不需要揣測。
-- **讀者選語氣。** 每位讀者在引導設定選一種語氣（溫和友善、客觀中立、清楚簡潔、文青風、黃山料體、財哥體、LinkedIn 感謝風），之後看到的所有他人內容都以這個語氣呈現。同一則貼文在兩支手機上長得不一樣。
+- **讀者選語氣。** 每位讀者在引導設定選一種語氣（溫和友善、客觀中立、文青風......等等），之後看到的所有他人內容都以這個語氣呈現。
 - **隨時看原文。** 每則內容都能一鍵切回原話，並標示改寫幅度，讀者不會被誤導。
 - **同一句話在兩端不一樣。** 私訊是最貼身的場景：你用力罵，對方用溫和語氣收到；對方冷冷回，你可以用友善語氣讀。
 
-改寫只改語氣，不改語意：不可曲解立場、不可更動事實、數字、人物、時間與結論。這條不變量寫在模型的系統提示裡，也由伺服器端的輸出驗證與語意相似度把關。
+改寫只改語氣不改語意，絕不曲解立場或更動事實、數字、人物、時間與結論
 
 ## 功能一覽
 
@@ -42,7 +42,6 @@
 | 聊天 | 1：1 私訊、最後一則訊息預覽、未讀數量、每秒輪詢新訊息 |
 | 個人頁 | 自己的貼文、登出 |
 | 語氣設定 | 引導設定時選語氣、之後可在設定頁切換；切換後全站內容立即換語氣 |
-| 內容管理 | 刪除自己的貼文與留言，改寫一併清除 |
 
 ## 技術架構
 
@@ -85,7 +84,7 @@ flowchart LR
 
 ### 寫入時預產，讀取時零模型呼叫
 
-改寫只在內容寫入時產生一次，對七種語氣各存一份、全站共用；之後任何讀者切任何語氣都是資料庫查詢，動態牆載入不會碰到模型。這讓讀取延遲穩定，也把模型費用鎖在「每則內容一次呼叫」。
+改寫只在內容寫入時產生一次，對多種語氣各存一份、全站共用；之後任何讀者切任何語氣都是資料庫查詢，動態牆載入不會碰到模型。這讓讀取延遲穩定，也把模型費用鎖在「每則內容一次呼叫」。
 
 ```mermaid
 sequenceDiagram
@@ -123,85 +122,9 @@ sequenceDiagram
 
 改寫失敗（逾時、限流、驗證不過）時該語氣留空，讀者看到原文並標示「原文」；模型永遠不會成為讀不到內容的原因。
 
-### 資料模型
-
-```mermaid
-erDiagram
-  users ||--o{ posts : 發表
-  users ||--o{ comments : 發表
-  users ||--o{ messages : 送出
-  users ||--o{ likes : 按
-  posts ||--o{ comments : 有
-  posts ||--o{ likes : 有
-  conversations ||--o{ messages : 包含
-  conversations ||--o{ conversation_reads : 閱讀進度
-  users {
-    uuid id
-    text username
-    text display_name
-    text tone "讀者語氣；null 代表尚未完成引導"
-  }
-  posts {
-    uuid id
-    uuid author_id
-    text original_text "唯一的事實來源"
-  }
-  renditions {
-    text kind "post / comment / message"
-    uuid content_id
-    text tone
-    text text
-    text scale "nearly_original / light / heavy"
-    real semantic_similarity_score
-  }
-  conversations {
-    uuid user_low_id
-    uuid user_high_id "兩人 id 排序後存，保證一對一只有一個對話"
-    timestamptz last_message_at
-  }
-  conversation_reads {
-    uuid conversation_id
-    uuid user_id
-    timestamptz last_read_at "未讀數 = 對方在此之後的訊息數"
-  }
-```
-
-`renditions` 沒有外鍵指向三張內容表（`content_id` 橫跨三種內容），由刪除端點順手清除。
-
-### 目錄結構
-
-| 路徑 | 內容 |
-|---|---|
-| `app/` | Nuxt 4 前端：`pages/`（動態牆、貼文、聊天、個人、設定、引導）、`components/`、`composables/` |
-| `server/api/` | HTTP 端點，只做取 session、驗輸入（zod）、整形回應 |
-| `server/utils/ai/` | 改寫管線：`prompt.ts`、`nvidia.ts`（金鑰輪替）、`render.ts`（預產）、`outputValidation.ts`、`semanticSimilarity.ts`、`scale.ts` |
-| `server/utils/` | 其他領域邏輯：對話、使用者、session、密文 |
-| `server/db/` | Drizzle schema、連線、migrations |
-| `shared/` | 前後端共用：語氣清單（`utils/tones.ts`）、內容常數、API 型別 |
-| `scripts/` | 預建帳號與 demo 內容的 seed 腳本 |
-| `tests/` | `node --test` 單元測試（輸出驗證、相似度、提示組裝、改寫幅度） |
-| `backlog/` | Backlog.md 管理的 PRD（`docs/`）、決策紀錄（`decisions/`）、任務（`tasks/`） |
-| `docs/` | 部署說明、語意相似度校準紀錄、簡報用架構圖 |
-| `CONTEXT.md` | 領域詞彙表：每個概念的正式名稱、程式識別碼與該避免的同義詞 |
-
-### 主要端點
-
-| 方法與路徑 | 用途 |
-|---|---|
-| `POST /api/auth/login`、`POST /api/auth/logout` | 預建帳號登入、登出（cookie session） |
-| `GET /api/me`、`PATCH /api/me/settings` | 目前登入者、更新語氣 |
-| `GET /api/posts`、`POST /api/posts` | 動態牆（游標分頁）、發文 |
-| `GET /api/posts/:id`、`DELETE /api/posts/:id` | 貼文頁、刪文 |
-| `GET/POST /api/posts/:id/comments`、`POST /api/posts/:id/like` | 留言、按讚 |
-| `GET /api/original?kind=&id=` | 讀者主動要求原文 |
-| `GET /api/renditions?kind=&id=` | 預產未完成時前端輪詢改寫 |
-| `GET /api/conversations`、`POST /api/conversations/with/:userId` | 聊天列表（含預覽與未讀數）、開啟對話 |
-| `GET/POST /api/conversations/:id/messages` | 拉訊息（`after` 游標；拉到即視為已讀）、送訊息 |
-| `POST /api/admin/prerender` | 以 `x-admin-secret` 保護，補齊既有內容缺少的語氣改寫 |
-
 ## 執行方式
 
-### 需求
+### 前置條件
 
 - Node.js 24、pnpm 10
 - Neon Postgres 連線字串（或任何 Postgres）
@@ -247,9 +170,9 @@ Vercel 零設定部署（repo root 即 Nuxt app），`vercel.json` 把 function 
 - **一次呼叫回七種語氣的 JSON**，而不是每種語氣各打一次。NIM 有每分鐘請求上限，這讓一則內容只佔一個配額。
 - **短輪詢而非 WebSocket**：Vercel serverless 不支援長連線，demo 規模下每秒一次輪詢完全夠用。
 - **未讀只記錄讀者自己的進度**，不做對方已讀回條，與「改寫只影響讀者這一端」的原則一致。
+- **不做註冊，帳號直接預建**：這是比賽 demo，使用者是十幾位隊友、評審與來賓。帳號與密碼由團隊用 seed 腳本寫進資料庫，現場直接提供可用帳號登入，省掉註冊、驗證信、忘記密碼整條流程，把時間留給語氣層本身。密碼因此以明文儲存、定時比對，只適用於這種封閉 demo，不是正式產品的做法。
 - **相似度門檻刻意設寬**：本地校準顯示 embedding 對否定翻轉、數字改動幾乎無辨識力，把它當作品質閘門會誤殺風格強烈但忠實的改寫。詳見 [docs/SEMANTIC_SIMILARITY_CALIBRATION.md](docs/SEMANTIC_SIMILARITY_CALIBRATION.md)。
 
-每一項取捨都有一則 ADR 在 `backlog/decisions/`，PRD 在 `backlog/docs/`。
 
 ## 來源說明
 

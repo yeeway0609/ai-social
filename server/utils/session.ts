@@ -4,7 +4,7 @@ import type { H3Event } from 'h3'
 import { schema, useDb } from '../db'
 import { secretEquals } from './crypto'
 
-const COOKIE = 'ai-social-session'
+const COOKIE = 'butong-tone-session'
 
 function sign(userId: string) {
   const secret = useRuntimeConfig().sessionSecret
