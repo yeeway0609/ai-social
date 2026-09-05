@@ -1,6 +1,7 @@
 import type { H3Event } from 'h3'
+import { OUTPUT_TOKENS_RANGE, TEMPERATURE_RANGE } from '#shared/utils/ai'
 
-export interface ResolvedCredential {
+export interface ResolvedCredential extends ModelOptions {
   provider: AiProvider
   apiKey: string
   source: CredentialSource
@@ -8,6 +9,17 @@ export interface ResolvedCredential {
 
 const PROVIDER_HEADER = 'x-ai-provider'
 const KEY_HEADER = 'x-ai-key'
+const MODEL_HEADER = 'x-ai-model'
+const TEMPERATURE_HEADER = 'x-ai-temperature'
+const MAX_OUTPUT_TOKENS_HEADER = 'x-ai-max-output-tokens'
+
+function numberHeader(event: H3Event, name: string, range: { min: number, max: number }, integer = false) {
+  const raw = getHeader(event, name)
+  if (!raw) return undefined
+  const value = Number(raw)
+  if (!Number.isFinite(value) || value < range.min || value > range.max) return undefined
+  return integer ? Math.round(value) : value
+}
 
 /**
  * 使用者自備金鑰只存在他自己的瀏覽器，每次請求用標頭帶上來、用完即丟。
@@ -17,7 +29,16 @@ export function readOwnCredential(event: H3Event): ResolvedCredential | null {
   const provider = getHeader(event, PROVIDER_HEADER)
   const apiKey = getHeader(event, KEY_HEADER)?.trim()
   if (!isAiProvider(provider) || !apiKey) return null
-  return { provider, apiKey, source: 'own' }
+  const model = getHeader(event, MODEL_HEADER)?.trim().slice(0, MAX_MODEL_NAME_LENGTH) || undefined
+  return {
+    provider,
+    apiKey,
+    source: 'own',
+    model,
+    // 標頭值不合法就當沒填，退回預設，不讓一個壞參數擋掉整次改寫
+    temperature: AI_PROVIDER_CAPABILITIES[provider].supportsTemperature ? numberHeader(event, TEMPERATURE_HEADER, TEMPERATURE_RANGE) : undefined,
+    maxOutputTokens: numberHeader(event, MAX_OUTPUT_TOKENS_HEADER, OUTPUT_TOKENS_RANGE, true)
+  }
 }
 
 /**

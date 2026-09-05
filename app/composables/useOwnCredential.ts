@@ -1,5 +1,5 @@
 /** 只存在這個瀏覽器的自備金鑰；平台不保存，換裝置或清除瀏覽資料就要重填。 */
-export interface OwnCredential {
+export interface OwnCredential extends ModelOptions {
   provider: AiProvider
   apiKey: string
 }
@@ -12,7 +12,14 @@ function read(): OwnCredential | null {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return null
     const parsed = JSON.parse(raw) as Partial<OwnCredential>
-    return isAiProvider(parsed.provider) && typeof parsed.apiKey === 'string' && parsed.apiKey ? { provider: parsed.provider, apiKey: parsed.apiKey } : null
+    if (!isAiProvider(parsed.provider) || typeof parsed.apiKey !== 'string' || !parsed.apiKey) return null
+    return {
+      provider: parsed.provider,
+      apiKey: parsed.apiKey,
+      model: typeof parsed.model === 'string' && parsed.model ? parsed.model : undefined,
+      temperature: typeof parsed.temperature === 'number' ? parsed.temperature : undefined,
+      maxOutputTokens: typeof parsed.maxOutputTokens === 'number' ? parsed.maxOutputTokens : undefined
+    }
   } catch {
     return null
   }
@@ -54,5 +61,10 @@ export function useOwnCredential() {
 /** 給 $fetch 攔截器用：從 localStorage 直接讀，不依賴元件生命週期。 */
 export function ownCredentialHeaders(): Record<string, string> {
   const credential = read()
-  return credential ? { 'x-ai-provider': credential.provider, 'x-ai-key': credential.apiKey } : {}
+  if (!credential) return {}
+  const headers: Record<string, string> = { 'x-ai-provider': credential.provider, 'x-ai-key': credential.apiKey }
+  if (credential.model) headers['x-ai-model'] = credential.model
+  if (credential.temperature !== undefined) headers['x-ai-temperature'] = String(credential.temperature)
+  if (credential.maxOutputTokens !== undefined) headers['x-ai-max-output-tokens'] = String(credential.maxOutputTokens)
+  return headers
 }

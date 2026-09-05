@@ -12,12 +12,16 @@ export type RewriteFn = (args: {
   system: string
   original: string
   timeoutMs: number
+  temperature?: number
+  maxOutputTokens?: number
 }) => Promise<string>
 
-const anthropic: RewriteFn = async ({ apiKey, model, system, original, timeoutMs }) => {
+const DEFAULT_MAX_OUTPUT_TOKENS = 1024
+
+const anthropic: RewriteFn = async ({ apiKey, model, system, original, timeoutMs, maxOutputTokens }) => {
   const response = await new Anthropic({ apiKey, timeout: timeoutMs, maxRetries: 0 }).messages.create({
     model,
-    max_tokens: 1024,
+    max_tokens: maxOutputTokens ?? DEFAULT_MAX_OUTPUT_TOKENS,
     system,
     messages: [{ role: 'user', content: original }]
   })
@@ -28,17 +32,19 @@ const anthropic: RewriteFn = async ({ apiKey, model, system, original, timeoutMs
     .trim()
 }
 
-const openai: RewriteFn = async ({ apiKey, model, system, original, timeoutMs }) => {
+const openai: RewriteFn = async ({ apiKey, model, system, original, timeoutMs, temperature, maxOutputTokens }) => {
   const response = await new OpenAI({ apiKey, timeout: timeoutMs, maxRetries: 0 }).responses.create({
     model,
     instructions: system,
-    input: original
+    input: original,
+    temperature,
+    max_output_tokens: maxOutputTokens
   })
   return response.output_text.trim()
 }
 
 // OpenRouter 相容 OpenAI 的 chat completions；免費模型帶 :free 後綴，額度由 OpenRouter 帳戶決定
-const openrouter: RewriteFn = async ({ apiKey, model, system, original, timeoutMs }) => {
+const openrouter: RewriteFn = async ({ apiKey, model, system, original, timeoutMs, temperature, maxOutputTokens }) => {
   const response = await new OpenAI({
     apiKey,
     baseURL: 'https://openrouter.ai/api/v1',
@@ -46,16 +52,19 @@ const openrouter: RewriteFn = async ({ apiKey, model, system, original, timeoutM
     maxRetries: 0
   }).chat.completions.create({
     model,
-    messages: [{ role: 'system', content: system }, { role: 'user', content: original }]
+    messages: [{ role: 'system', content: system }, { role: 'user', content: original }],
+    temperature,
+    max_tokens: maxOutputTokens
   })
   return response.choices[0]?.message.content?.trim() ?? ''
 }
 
 export const REWRITE_FNS: Record<AiProvider, RewriteFn> = { anthropic, openai, openrouter }
 
-export function modelFor(provider: AiProvider) {
+/** 自備金鑰可指定模型，沒指定就用該供應商的環境預設。 */
+export function modelFor(provider: AiProvider, override?: string) {
   const { ai } = useRuntimeConfig()
-  return { anthropic: ai.modelAnthropic, openai: ai.modelOpenai, openrouter: ai.modelOpenrouter }[provider]
+  return override || { anthropic: ai.modelAnthropic, openai: ai.modelOpenai, openrouter: ai.modelOpenrouter }[provider]
 }
 
 /** SDK 的逾時與額度錯誤各自對應不同的前端處置（重試 vs 導去設定金鑰），所以分開辨識。 */
