@@ -1,5 +1,6 @@
 import type { H3Event } from 'h3'
-import { AI_PROVIDER_CAPABILITIES, isAllowedBaseUrl, OUTPUT_TOKENS_RANGE, TEMPERATURE_RANGE } from '#shared/utils/ai'
+import { AI_PROVIDER_CAPABILITIES, isAiProvider, isAllowedBaseUrl, MAX_MODEL_NAME_LENGTH, OUTPUT_TOKENS_RANGE, TEMPERATURE_RANGE } from '#shared/utils/ai'
+import type { ModelOptions } from '#shared/utils/ai'
 
 export interface ResolvedCredential extends ModelOptions {
   provider: AiProvider
@@ -66,14 +67,17 @@ export function defaultProvider(): AiProvider {
   return isAiProvider(ai.defaultProvider) ? ai.defaultProvider : 'anthropic'
 }
 
+export function resolvePoolCredential(provider: AiProvider): ResolvedCredential | null {
+  const keys = pool(provider)
+  if (keys.length === 0) return null
+  return { provider, apiKey: keys[poolCursor++ % keys.length]!, source: 'pool' }
+}
+
 /**
  * 決定這次改寫要燒誰的額度：請求帶了自備金鑰就用它，否則動用環境預設供應商的共用池。
  * 池空不是系統錯誤——demo 現場共用池會被玩爆，要讓呼叫端有機會把使用者導去填自己的金鑰。
  */
 export function resolveCredential(own: ResolvedCredential | null): ResolvedCredential | null {
   if (own) return own
-  const provider = defaultProvider()
-  const keys = pool(provider)
-  if (keys.length === 0) return null
-  return { provider, apiKey: keys[poolCursor++ % keys.length]!, source: 'pool' }
+  return resolvePoolCredential(defaultProvider())
 }

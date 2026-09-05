@@ -1,5 +1,6 @@
 import type { CredentialSource } from '../utils/ai'
 import type { ContentKind, RewriteScale } from '../utils/content'
+import type { SemanticSimilarityResult } from './semanticSimilarity'
 
 export interface UserSummary {
   id: string
@@ -81,12 +82,38 @@ export interface RenditionResult {
   /** true 代表這就是原文（作者本人、讀者尚未設定語氣、或改寫失敗）。 */
   isOriginal: boolean
   scale: RewriteScale | null
+  /** null 表示尚未評估、舊快取或顯示原文。 */
+  semanticSimilarity: SemanticSimilarityResult | null
   source: CredentialSource | null
-  error: 'no_ai_credential' | 'provider_error' | 'timeout' | null
+  error: RenditionError | null
 }
+
+export type RenditionError =
+  | 'no_ai_credential'
+  | 'provider_authentication_failed'
+  | 'provider_rate_limited'
+  | 'provider_error'
+  | 'timeout'
+  | 'invalid_model_output'
+  | 'token_changed'
+  | 'output_too_long'
 
 export interface OriginalResult {
   kind: ContentKind
   id: string
   text: string
+}
+
+/** 批次端點的整合契約；目前單筆端點與前端佇列尚未切換。 */
+export interface RenderBatchRequest {
+  items: RenderRequest[]
+}
+
+export type RenderBatchItem = Omit<RenditionResult, 'error'> & {
+  error: RenditionResult['error']
+}
+
+export interface RenderBatchResult {
+  version: 'rendition-batch-v1'
+  items: RenderBatchItem[]
 }

@@ -32,19 +32,26 @@ const displayText = computed(() => {
 const isOriginalShown = computed(() => props.content.isOwn || isRevealingOriginal.value || rendition.value?.isOriginal === true)
 const isLoading = computed(() => displayText.value === null)
 const canReveal = computed(() => !props.content.isOwn && rendition.value && !rendition.value.isOriginal)
+const canRetry = computed(() => !props.content.isOwn && !isLoading.value && !!rendition.value?.error)
 const scaleLabel = computed(() => rendition.value?.scale ? REWRITE_SCALE_LABELS[rendition.value.scale] : null)
+const semanticSimilarityLabel = computed(() => {
+  const semanticSimilarity = rendition.value?.semanticSimilarity
+  if (!rendition.value || rendition.value.isOriginal || !semanticSimilarity) return null
+  if (semanticSimilarity.status === 'unavailable') return '語意相似度暫不可用'
+  return `語意相似度 ${(semanticSimilarity.score * 100).toFixed(1)}%`
+})
 
 useIntersectionObserver(root, ([entry]) => {
   if (entry?.isIntersecting) isNearViewport.value = true
 }, { rootMargin: '600px 0px' })
 
-watch([isNearViewport, epoch], async ([isNear, currentEpoch]) => {
-  if (!isNear || props.content.isOwn || renderedEpoch.value === currentEpoch) return
+async function loadRendition(currentEpoch: number, refresh = false) {
+  if (props.content.isOwn) return
   renderedEpoch.value = currentEpoch
   rendition.value = null
   isRevealingOriginal.value = false
   try {
-    const result = await render({ kind: props.kind, id: props.content.id })
+    const result = await render({ kind: props.kind, id: props.content.id }, { refresh })
     rendition.value = result
     if (result.isOriginal) originalText.value = result.text
     if (result.error) {
@@ -53,9 +60,18 @@ watch([isNearViewport, epoch], async ([isNear, currentEpoch]) => {
     }
   } catch {
     emit('renderFailed', 'provider_error')
-    rendition.value = { kind: props.kind, id: props.content.id, text: '（載入失敗）', isOriginal: true, scale: null, source: null, error: 'provider_error' }
+    rendition.value = { kind: props.kind, id: props.content.id, text: '（載入失敗）', isOriginal: true, scale: null, semanticSimilarity: null, source: null, error: 'provider_error' }
   }
+}
+
+watch([isNearViewport, epoch], async ([isNear, currentEpoch]) => {
+  if (!isNear || props.content.isOwn || renderedEpoch.value === currentEpoch) return
+  await loadRendition(currentEpoch)
 }, { immediate: true })
+
+async function handleRetry() {
+  await loadRendition(epoch.value, true)
+}
 
 async function handleClickReveal() {
   if (isRevealingOriginal.value) {
@@ -126,6 +142,8 @@ async function handleClickReveal() {
         >
           AI 改寫<template v-if="scaleLabel">
             ・{{ scaleLabel }}
+          </template><template v-if="semanticSimilarityLabel">
+            ・{{ semanticSimilarityLabel }}
           </template>
         </UBadge>
       </Transition>
@@ -137,6 +155,15 @@ async function handleClickReveal() {
         :loading="isLoadingOriginal"
         :label="isRevealingOriginal ? '回到改寫版' : '顯示原文'"
         @click.stop="handleClickReveal"
+      />
+      <UButton
+        v-if="canRetry"
+        color="neutral"
+        variant="link"
+        size="xs"
+        icon="i-lucide-rotate-ccw"
+        label="重試"
+        @click.stop="handleRetry"
       />
     </div>
   </div>

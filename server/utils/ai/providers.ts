@@ -87,7 +87,7 @@ export function modelFor(provider: AiProvider, override?: string) {
 /** SDK 的逾時與額度錯誤各自對應不同的前端處置（重試 vs 導去設定金鑰），所以分開辨識。 */
 export function classifyProviderError(err: unknown): RenditionResult['error'] {
   if (err instanceof Anthropic.APIConnectionTimeoutError || err instanceof OpenAI.APIConnectionTimeoutError) return 'timeout'
-  if (err instanceof Anthropic.AuthenticationError || err instanceof OpenAI.AuthenticationError) return 'no_ai_credential'
-  if (err instanceof Anthropic.RateLimitError || err instanceof OpenAI.RateLimitError) return 'no_ai_credential'
+  if (err instanceof Anthropic.AuthenticationError || err instanceof OpenAI.AuthenticationError) return 'provider_authentication_failed'
+  if (err instanceof Anthropic.RateLimitError || err instanceof OpenAI.RateLimitError) return 'provider_rate_limited'
   return 'provider_error'
 }

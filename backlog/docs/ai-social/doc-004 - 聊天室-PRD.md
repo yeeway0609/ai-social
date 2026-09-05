@@ -53,7 +53,7 @@ updated_date: '2026-09-04 18:09'
 sequenceDiagram
   participant A as 使用者 A（語氣：溫和）
   participant S as 伺服器
-  participant B as 使用者 B（語氣：犀利）
+  participant B as 使用者 B（語氣：客觀中立）
   A->>S: 送出訊息（原文）
   A->>A: 立即顯示原文，標「原文」
   S->>S: 存原文

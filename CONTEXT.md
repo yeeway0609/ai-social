@@ -39,16 +39,24 @@
 
 ### 改寫（rendition）
 
-一則內容（貼文、留言、訊息）在某個語氣（與自訂指示）下的 AI 產出結果。預設語氣的改寫全站共用並存進資料庫；自訂指示的改寫以指示雜湊另存。
+一則內容（貼文、留言、訊息）在某個語氣下的 AI 產出結果。預設語氣的改寫全站共用並存進資料庫；帶自訂語氣指示的改寫只在用戶端暫存，不進平台資料庫。
 
-- 識別碼：`renditions` 資料表、`RenditionResult`、`renderContent()`、`pregenerateRenditions()`
+- 識別碼：`renditions` 資料表、`RenditionResult`、`renderContent()`、`renderContentBatch()`、`pregenerateRenditions()`
 - 避免：「翻譯」（會誤導成語言轉換）、「潤稿」（暗示原文有瑕疵）、「版本」（`revision` 另指編輯歷史，本專案沒有這概念）
 
 ### 改寫幅度
 
 一則改寫相對原文被改動了多少，顯示在貼文上讓讀者知道自己看到的離原話有多遠。
 
-- 避免：「相似度」（方向相反，容易讀錯）
+- 識別碼：`RewriteScale`、`scale`，既有字元差異分級。
+- 不與「語意相似度」混用，兩者衡量的對象與方向不同。
+
+### 語意相似度
+
+原文與改寫文字的 embedding 向量接近程度。分數越高表示越接近；前端可顯示為 `XX.X%`，但這只是 cosine similarity 的百分比格式，不代表事實正確率、原意保留百分比或語氣變化大小。
+
+- 識別碼：`SemanticSimilarityResult`、`semanticSimilarity`、`measureSemanticSimilarity()`。
+- 避免：「改寫百分比」「原意保留率」。
 
 ### 使用者名稱（username）
 

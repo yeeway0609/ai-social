@@ -10,7 +10,8 @@ const toast = useToast()
 // 自訂指示只給有自備金鑰的人：它的改寫不進共用快取，每次都燒讀者自己的額度
 const { hasOwnCredential } = useOwnCredential()
 
-const tone = ref(user.value?.tone ?? 'gentle')
+const defaultTone = TONES[0]?.id ?? 'gentle_friendly'
+const tone = ref(findTone(user.value?.tone ?? '')?.id ?? defaultTone)
 const customInstruction = ref(user.value?.customInstruction ?? '')
 const isSubmitting = ref(false)
 

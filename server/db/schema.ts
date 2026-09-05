@@ -1,4 +1,4 @@
-import { index, pgTable, primaryKey, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core'
+import { index, pgTable, primaryKey, real, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core'
 
 /**
  * 帳號由團隊預建，沒有註冊；password 是 demo 用的明文短碼，服務 demo 後即關閉。
@@ -59,7 +59,7 @@ export const messages = pgTable('messages', {
 
 /**
  * 改寫快取。預設語氣的改寫全站共用（同語氣所有讀者看到同一份），
- * 帶自訂指示的改寫以指示的雜湊區分，只有寫了一樣指示的人會命中。
+ * 帶自訂指示的改寫只回給用戶端暫存，不寫入這張表。
  * 內容被刪時改寫沒有外鍵可 cascade（kind 不同表），由刪除端點順手清。
  */
 export const renditions = pgTable('renditions', {
@@ -67,9 +67,13 @@ export const renditions = pgTable('renditions', {
   kind: text('kind').notNull(),
   contentId: uuid('content_id').notNull(),
   tone: text('tone').notNull(),
-  // 預設語氣為空字串；自訂指示存 sha256，讓唯一索引能涵蓋兩種情況
+  // 目前只持久化純預設語氣；保留 instructionHash 讓舊資料與唯一索引維持相容
   instructionHash: text('instruction_hash').notNull().default(''),
   text: text('text').notNull(),
   scale: text('scale').notNull(),
+  semanticSimilarityScore: real('semantic_similarity_score'),
+  semanticSimilarityModel: text('semantic_similarity_model'),
+  semanticSimilarityVersion: text('semantic_similarity_version'),
+  semanticSimilarityError: text('semantic_similarity_error'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
 }, table => [uniqueIndex('renditions_key').on(table.kind, table.contentId, table.tone, table.instructionHash)])
