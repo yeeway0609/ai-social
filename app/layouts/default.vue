@@ -37,7 +37,7 @@ const activeTabIndex = computed(() => TABS.findIndex(tab => isActive(tab.to)))
         <UButton
           v-if="user"
           to="/settings"
-          color="neutral"
+          color="primary"
           variant="ghost"
           size="sm"
           icon="i-mingcute-settings-3-line"
