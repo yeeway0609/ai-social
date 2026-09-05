@@ -28,9 +28,9 @@ const clockTime = computed(() => formatClockTime(props.message.createdAt))
       :class="message.isOwn ? 'items-end' : 'items-start'"
     >
       <div
-        class="rounded-md px-3 py-2"
+        class="rounded-md px-3 py-2 transition-colors duration-(--duration-fast)"
         :class="[
-          message.isOwn ? 'rounded-br-none bg-primary text-inverted glow-primary-soft' : 'rounded-bl-none border border-accented bg-elevated',
+          message.isOwn ? 'rounded-br-none bg-primary text-inverted glow-primary-soft' : 'rounded-bl-none border border-accented bg-elevated has-[.typing-dots]:border-transparent has-[.typing-dots]:bg-transparent has-[.typing-dots]:px-0',
           isSending && 'opacity-70'
         ]"
       >
