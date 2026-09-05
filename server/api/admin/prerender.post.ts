@@ -2,10 +2,13 @@ import { and, eq, isNull, ne } from 'drizzle-orm'
 import { z } from 'zod'
 import { schema, useDb } from '../../db'
 import { pregenerateRenditions } from '../../utils/ai/render'
+import { secretEquals } from '../../utils/crypto'
 
 const body = z.object({
   /** 一次最多處理幾則內容；預產是逐則五個語氣，量大時分批跑避免撞函式時限。 */
-  limit: z.number().int().min(1).max(200).default(50)
+  limit: z.number().int().min(1).max(200).default(50),
+  /** 用這個帳號的自備金鑰產所有內容；不給就用各作者自己的金鑰、其次共用池。 */
+  asHandle: z.string().trim().min(1).optional()
 })
 
 /**
@@ -15,11 +18,19 @@ const body = z.object({
  */
 export default defineEventHandler(async (event) => {
   const secret = useRuntimeConfig().adminSecret
-  if (!secret || getHeader(event, 'x-admin-secret') !== secret) {
+  const provided = getHeader(event, 'x-admin-secret')
+  if (!secret || !provided || !secretEquals(provided, secret)) {
     throw createError({ statusCode: 404, statusMessage: 'not_found' })
   }
-  const { limit } = body.parse((await readBody(event).catch(() => null)) ?? {})
+  const { limit, asHandle } = body.parse((await readBody(event).catch(() => null)) ?? {})
   const db = useDb()
+
+  let credentialUserId: string | undefined
+  if (asHandle) {
+    const [user] = await db.select({ id: schema.users.id }).from(schema.users).where(eq(schema.users.handle, asHandle.toLowerCase())).limit(1)
+    if (!user) throw createError({ statusCode: 404, statusMessage: 'user_not_found' })
+    credentialUserId = user.id
+  }
 
   const pendingPosts = await db
     .select({ id: schema.posts.id, authorId: schema.posts.authorId })
@@ -38,12 +49,12 @@ export default defineEventHandler(async (event) => {
   let failed = 0
   // 內容之間串行、每則內部五個語氣並行：兼顧速度與不把金鑰池打到 rate limit
   for (const post of pendingPosts) {
-    const result = await pregenerateRenditions('post', post.id, post.authorId)
+    const result = await pregenerateRenditions('post', post.id, credentialUserId ?? post.authorId)
     generated += result.generated
     failed += result.failed
   }
   for (const comment of pendingComments) {
-    const result = await pregenerateRenditions('comment', comment.id, comment.authorId)
+    const result = await pregenerateRenditions('comment', comment.id, credentialUserId ?? comment.authorId)
     generated += result.generated
     failed += result.failed
   }

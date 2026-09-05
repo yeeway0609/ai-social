@@ -10,13 +10,13 @@ const SIZE_CLASSES = {
   lg: 'size-16 text-xl'
 }
 
-const initial = computed(() => Array.from(props.user.displayName)[0] ?? props.user.handle[0] ?? '?')
+const initial = computed(() => Array.from(props.user.displayName)[0] ?? props.user.username[0] ?? '?')
 </script>
 
 <template>
   <span
     class="inline-flex shrink-0 items-center justify-center rounded-full font-semibold text-white select-none"
-    :class="[SIZE_CLASSES[size], avatarColorFor(user.handle)]"
+    :class="[SIZE_CLASSES[size], avatarColorFor(user.username)]"
     :title="user.displayName"
   >
     {{ initial }}

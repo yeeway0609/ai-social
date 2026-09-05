@@ -6,10 +6,10 @@ const SKELETON_KEYS = ['a', 'b', 'c']
 const route = useRoute()
 const { user: currentUser } = useAuth()
 
-const handle = route.params.handle as string
+const username = route.params.username as string
 
-const { data: profile, error: profileError } = await useAsyncData(`user-${handle}`, () => $fetch<UserSummary>(`/api/users/${handle}`), { server: false })
-const { items: posts, sentinel, isLoadingFirstPage, isLoadingMore, isRefreshing, hasMore, refreshLatest, removePost, updatePost } = await usePostFeed(`user-${handle}-posts`, `/api/users/${handle}/posts`)
+const { data: profile, error: profileError } = await useAsyncData(`user-${username}`, () => $fetch<UserSummary>(`/api/users/${username}`), { server: false })
+const { items: posts, sentinel, isLoadingFirstPage, isLoadingMore, isRefreshing, hasMore, refreshLatest, removePost, updatePost } = await usePostFeed(`user-${username}-posts`, `/api/users/${username}/posts`)
 
 const isNotFound = computed(() => profileError.value instanceof FetchError && profileError.value.status === 404)
 const isOwnProfile = computed(() => !!profile.value && profile.value.id === currentUser.value?.id)
@@ -40,7 +40,7 @@ const isOwnProfile = computed(() => !!profile.value && profile.value.id === curr
               {{ profile.displayName }}
             </h1>
             <p class="truncate text-sm text-muted">
-              @{{ profile.handle }}
+              @{{ profile.username }}
             </p>
           </div>
         </div>

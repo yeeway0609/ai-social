@@ -1,5 +1,5 @@
 [
-  { "handle": "alex", "displayName": "Alex", "password": "12345678" },
-  { "handle": "mina", "displayName": "Mina", "password": "12345678" },
-  { "handle": "judge", "displayName": "評審", "password": "12345678" }
+  { "username": "alex", "displayName": "Alex", "password": "12345678" },
+  { "username": "mina", "displayName": "Mina", "password": "12345678" },
+  { "username": "judge", "displayName": "評審", "password": "12345678" }
 ]

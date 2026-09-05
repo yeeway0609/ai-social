@@ -7,7 +7,7 @@ const toast = useToast()
 const isVisibleDeleteModal = ref(false)
 const isDeleting = ref(false)
 
-const authorPath = computed(() => `/users/${props.comment.author.handle}`)
+const authorPath = computed(() => `/users/${props.comment.author.username}`)
 const menuItems = [{
   label: '刪除',
   icon: 'i-lucide-trash-2',
@@ -53,7 +53,7 @@ async function handleClickConfirmDelete() {
           >
             {{ comment.author.displayName }}
           </NuxtLink>
-          <span class="truncate text-muted">@{{ comment.author.handle }}</span>
+          <span class="truncate text-muted">@{{ comment.author.username }}</span>
           <span class="text-muted">·</span>
           <time
             class="text-muted"

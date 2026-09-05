@@ -3,7 +3,7 @@ import type { ContentKind, RewriteScale } from '../utils/content'
 
 export interface UserSummary {
   id: string
-  handle: string
+  username: string
   displayName: string
 }
 
@@ -20,7 +20,7 @@ export interface SettingsUpdate {
 }
 
 export interface LoginRequest {
-  handle: string
+  username: string
   password: string
 }
 

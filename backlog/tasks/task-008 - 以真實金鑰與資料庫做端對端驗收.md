@@ -4,6 +4,7 @@ title: 以真實金鑰與資料庫做端對端驗收
 status: To Do
 assignee: []
 created_date: '2026-09-04 18:28'
+updated_date: '2026-09-05 03:41'
 labels:
   - backend
   - frontend
@@ -26,7 +27,7 @@ ordinal: 8000
 ## 需要人眼確認的實作判斷
 - 改寫幅度三檔的閾值（Dice 相似度 0.75／0.4）是估的，看實際分布調整。
 - 預設語氣清單暫用五個候選（TASK-002），prompt 文字在 shared/utils/tones.ts。
-- 登入 handle 一律小寫比對。
+- 登入 username 一律小寫比對。
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria

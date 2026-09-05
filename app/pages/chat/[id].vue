@@ -149,7 +149,7 @@ function handleKeydownEnter(event: KeyboardEvent) {
             {{ other.displayName }}
           </p>
           <p class="truncate text-xs text-muted">
-            @{{ other.handle }}
+            @{{ other.username }}
           </p>
         </div>
       </template>

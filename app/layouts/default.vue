@@ -14,8 +14,8 @@ const currentTone = computed(() => findTone(user.value?.tone ?? ORIGINAL_TONE))
 
 function isActive(to: string) {
   if (to === '/') return route.path === '/'
-  // 「我」分頁實際落在 /users/<自己的 handle>，路徑不含 /me
-  if (to === '/me') return route.path === '/me' || (!!user.value && route.path === `/users/${user.value.handle}`)
+  // 「我」分頁實際落在 /users/<自己的 username>，路徑不含 /me
+  if (to === '/me') return route.path === '/me' || (!!user.value && route.path === `/users/${user.value.username}`)
   return route.path.startsWith(to)
 }
 </script>

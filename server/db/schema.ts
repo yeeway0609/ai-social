@@ -6,14 +6,14 @@ import { index, jsonb, pgTable, primaryKey, text, timestamp, uniqueIndex, uuid }
  */
 export const users = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),
-  handle: text('handle').notNull(),
+  username: text('username').notNull(),
   displayName: text('display_name').notNull(),
   password: text('password').notNull(),
   tone: text('tone'),
   customInstruction: text('custom_instruction'),
   onboardedAt: timestamp('onboarded_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
-}, table => [uniqueIndex('users_handle_key').on(table.handle)])
+}, table => [uniqueIndex('users_username_key').on(table.username)])
 
 /**
  * 使用者自備的模型金鑰。demo 現場團隊共用池會被玩爆，自備金鑰是耗盡後唯一的續命路徑，

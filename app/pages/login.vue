@@ -5,7 +5,7 @@ definePageMeta({ layout: 'bare' })
 
 const { login } = useAuth()
 
-const form = reactive<LoginRequest>({ handle: '', password: '' })
+const form = reactive<LoginRequest>({ username: '', password: '' })
 const isSubmitting = ref(false)
 const errorMessage = ref<string | null>(null)
 
@@ -13,7 +13,7 @@ async function handleSubmitLogin() {
   isSubmitting.value = true
   errorMessage.value = null
   try {
-    const user = await login({ handle: form.handle.trim().toLowerCase(), password: form.password })
+    const user = await login({ username: form.username.trim().toLowerCase(), password: form.password })
     await navigateTo(user.onboardedAt ? '/' : '/onboarding')
   } catch (err) {
     errorMessage.value = err instanceof FetchError && err.status === 401
@@ -40,14 +40,14 @@ async function handleSubmitLogin() {
     >
       <UFormField
         label="帳號"
-        name="handle"
+        name="username"
       >
         <UInput
-          v-model="form.handle"
+          v-model="form.username"
           class="w-full"
           autocomplete="username"
           autocapitalize="none"
-          placeholder="handle"
+          placeholder="username"
           size="lg"
         />
       </UFormField>
@@ -74,7 +74,7 @@ async function handleSubmitLogin() {
         type="submit"
         size="lg"
         :loading="isSubmitting"
-        :disabled="!form.handle || !form.password"
+        :disabled="!form.username || !form.password"
       >
         登入
       </UButton>

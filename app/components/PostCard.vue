@@ -15,7 +15,7 @@ const isVisibleDeleteModal = ref(false)
 const isDeleting = ref(false)
 
 const postPath = computed(() => `/posts/${props.post.id}`)
-const authorPath = computed(() => `/users/${props.post.author.handle}`)
+const authorPath = computed(() => `/users/${props.post.author.username}`)
 const menuItems = [{
   label: '刪除',
   icon: 'i-lucide-trash-2',
@@ -92,7 +92,7 @@ async function handleClickConfirmDelete() {
           >
             {{ post.author.displayName }}
           </NuxtLink>
-          <span class="truncate text-muted">@{{ post.author.handle }}</span>
+          <span class="truncate text-muted">@{{ post.author.username }}</span>
           <span class="text-muted">·</span>
           <time
             class="text-muted"

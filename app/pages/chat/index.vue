@@ -79,7 +79,7 @@ async function handleClickConversation(row: ConversationSummary) {
               {{ row.other.displayName }}
             </p>
             <p class="truncate text-sm text-muted">
-              @{{ row.other.handle }}
+              @{{ row.other.username }}
             </p>
           </div>
           <UIcon

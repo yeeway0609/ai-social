@@ -116,14 +116,14 @@ export async function renderContent(kind: ContentKind, id: string, viewerId: str
 
 /**
  * 內容寫入時預先產出所有預設語氣的改寫，讀者捲到時直接命中快取。
- * 燒的是作者的自備金鑰、其次共用池。任何一個語氣失敗就略過，讀者端會惰性補生成。
- * 訊息只需要收件人當下的語氣，傳 tones 限制範圍。
+ * 燒的是 credentialUserId 這位使用者的自備金鑰、其次共用池；寫入端點傳作者，管理工具可指定他人。
+ * 任何一個語氣失敗就略過，讀者端會惰性補生成。訊息只需要收件人當下的語氣，傳 toneIds 限制範圍。
  */
-export async function pregenerateRenditions(kind: ContentKind, id: string, authorId: string, toneIds?: string[]) {
+export async function pregenerateRenditions(kind: ContentKind, id: string, credentialUserId: string, toneIds?: string[]) {
   const content = await loadContent(kind, id)
   if (!content) return { generated: 0, failed: 0 }
 
-  const credential = await resolveViewerCredential(authorId)
+  const credential = await resolveViewerCredential(credentialUserId)
   if (!credential) return { generated: 0, failed: 0 }
 
   const targets = TONES.filter(tone => tone.id !== ORIGINAL_TONE && (!toneIds || toneIds.includes(tone.id)))

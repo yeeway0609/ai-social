@@ -19,9 +19,9 @@ export function formatClockTime(iso: string) {
 
 const AVATAR_COLORS = ['bg-violet-500', 'bg-rose-500', 'bg-amber-500', 'bg-emerald-500', 'bg-sky-500', 'bg-fuchsia-500', 'bg-teal-500', 'bg-orange-500']
 
-/** 同一個 handle 永遠拿到同一個顏色，沒有頭像圖也能一眼認人。 */
-export function avatarColorFor(handle: string) {
+/** 同一個 username 永遠拿到同一個顏色，沒有頭像圖也能一眼認人。 */
+export function avatarColorFor(username: string) {
   let hash = 0
-  for (const char of handle) hash = (hash * 31 + char.charCodeAt(0)) >>> 0
+  for (const char of username) hash = (hash * 31 + char.charCodeAt(0)) >>> 0
   return AVATAR_COLORS[hash % AVATAR_COLORS.length]!
 }
