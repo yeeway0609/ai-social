@@ -1,9 +1,6 @@
 import { SEMANTIC_SIMILARITY_VERSION } from '../../../shared/types/semanticSimilarity.ts'
 import type { SemanticSimilarityError, SemanticSimilarityResult } from '../../../shared/types/semanticSimilarity.ts'
 
-export { SEMANTIC_SIMILARITY_VERSION } from '../../../shared/types/semanticSimilarity.ts'
-export type { SemanticSimilarityError, SemanticSimilarityResult } from '../../../shared/types/semanticSimilarity.ts'
-
 export const DEFAULT_EMBEDDING_MODEL = 'text-embedding-3-small'
 
 export interface SemanticSimilarityInput {

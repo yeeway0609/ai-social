@@ -33,6 +33,7 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     sessionSecret: '',
+    adminSecret: '',
 
     ai: {
       defaultProvider: 'anthropic',
