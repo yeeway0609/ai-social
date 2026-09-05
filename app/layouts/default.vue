@@ -69,20 +69,20 @@ const activeTabIndex = computed(() => TABS.findIndex(tab => isActive(tab.to)))
           :key="tab.to"
         >
           <NuxtLink
-            class="relative flex flex-col items-center gap-1 py-2.5 label-mono transition-colors duration-(--duration-base) active:scale-95"
+            class="relative flex items-center justify-center py-3 transition-colors duration-(--duration-base) active:scale-95"
             :class="isActive(tab.to) ? 'text-primary' : 'text-muted hover:text-default'"
             :to="tab.to"
+            :aria-label="tab.label"
           >
-            <span class="relative flex size-6 items-center justify-center">
+            <span class="relative flex size-7 items-center justify-center">
               <Transition name="spin-swap">
                 <UIcon
                   :key="isActive(tab.to) ? 'active' : 'idle'"
                   :name="isActive(tab.to) ? tab.activeIcon : tab.icon"
-                  class="size-6"
+                  class="size-7"
                 />
               </Transition>
             </span>
-            {{ tab.label }}
           </NuxtLink>
         </li>
       </ul>

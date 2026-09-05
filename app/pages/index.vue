@@ -4,21 +4,16 @@ const { items: posts, sentinel, isLoadingFirstPage, isLoadingMore, isRefreshing,
 
 <template>
   <div>
-    <div class="flex items-center justify-between px-4 py-3">
-      <div>
-        <p class="label-mono text-muted">
-          01 / Feed
-        </p>
-        <h1 class="page-title mt-1 text-2xl">
-          動態牆
-        </h1>
-      </div>
+    <div class="flex items-center justify-between px-4 py-2">
+      <h1 class="page-title text-lg">
+        動態牆
+      </h1>
       <UButton
         color="neutral"
         variant="ghost"
         size="sm"
         icon="i-mingcute-refresh-2-line"
-        label="載入新貼文"
+        aria-label="載入新貼文"
         :loading="isRefreshing"
         @click="refreshLatest"
       />

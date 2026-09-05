@@ -17,7 +17,7 @@ async function handleSaved() {
       先選一個語氣
     </h1>
     <p class="mt-2 text-muted">
-      別人寫的每一句話，都會先換成這個語氣再給你看。你自己寫的永遠是原文。隨時可以在設定裡改。
+      別人的話會用這個語氣呈現，你寫的永遠是原文。
     </p>
     <div class="mt-8">
       <ToneSettingsForm

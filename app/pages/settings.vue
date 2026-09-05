@@ -9,12 +9,9 @@ async function handleSaved() {
 </script>
 
 <template>
-  <div class="space-y-10 px-4 py-6">
+  <div class="space-y-10 px-4 py-4">
     <section>
-      <p class="label-mono text-muted">
-        Settings
-      </p>
-      <h1 class="page-title mt-1 text-2xl">
+      <h1 class="page-title text-lg">
         語氣設定
       </h1>
       <div class="mt-4">

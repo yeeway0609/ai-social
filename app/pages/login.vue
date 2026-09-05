@@ -27,10 +27,7 @@ async function handleSubmitLogin() {
 
 <template>
   <div>
-    <p class="label-mono text-muted">
-      00 / 登入
-    </p>
-    <div class="mt-3 flex items-center gap-3">
+    <div class="flex items-center gap-3">
       <BrandLogo
         size="size-12"
       />
@@ -87,9 +84,5 @@ async function handleSubmitLogin() {
         登入
       </UButton>
     </form>
-
-    <p class="mt-6 text-center text-xs text-muted">
-      帳號由團隊發放，沒有註冊功能。
-    </p>
   </div>
 </template>

@@ -24,11 +24,8 @@ async function handleClickConversation(row: ConversationSummary) {
 </script>
 
 <template>
-  <div class="px-4 py-6">
-    <p class="label-mono text-muted">
-      03 / Chat
-    </p>
-    <h1 class="page-title mt-1 text-2xl">
+  <div class="px-4 py-4">
+    <h1 class="page-title text-lg">
       聊天
     </h1>
 
@@ -91,10 +88,10 @@ async function handleClickConversation(row: ConversationSummary) {
             class="size-4 animate-spin text-muted"
           />
           <span
-            v-else
+            v-else-if="row.lastMessageAt"
             class="shrink-0 text-xs text-muted"
           >
-            {{ row.lastMessageAt ? formatRelativeTime(row.lastMessageAt) : '尚未聊過' }}
+            {{ formatRelativeTime(row.lastMessageAt) }}
           </span>
         </button>
       </li>

@@ -1,8 +1,5 @@
 <script setup lang="ts">
-/**
- * 引導設定與設定頁共用的語氣表單；儲存後重抓所有列表，讓內容換成新語氣的改寫。
- * 自訂語氣偏好欄位先以停用狀態保留在版面上，讓使用者知道這個能力存在、只是尚未開放。
- */
+/** 引導設定與設定頁共用的語氣表單；儲存後重抓所有列表，讓內容換成新語氣的改寫。 */
 const props = defineProps<{ submitLabel: string }>()
 const emit = defineEmits<{ saved: [user: CurrentUser] }>()
 
@@ -32,8 +29,8 @@ async function handleSubmitSettings() {
     @submit.prevent="handleSubmitSettings"
   >
     <fieldset class="space-y-3">
-      <legend class="mb-3 text-sm font-medium">
-        你想用什麼語氣讀別人的話？
+      <legend class="sr-only">
+        語氣
       </legend>
       <label
         v-for="option in TONES"
@@ -66,19 +63,6 @@ async function handleSubmitSettings() {
         </span>
       </label>
     </fieldset>
-
-    <UFormField
-      label="額外的語氣偏好（選填）"
-      name="customInstruction"
-      description="用自己的話補充，例如「多用台語詞」「不要用驚嘆號」。"
-    >
-      <UTextarea
-        class="w-full"
-        :rows="3"
-        disabled
-        placeholder="尚未支援"
-      />
-    </UFormField>
 
     <UButton
       class="w-full justify-center"

@@ -72,7 +72,7 @@ const isOwnProfile = computed(() => !!profile.value && profile.value.id === curr
           variant="ghost"
           size="xs"
           icon="i-mingcute-refresh-2-line"
-          label="載入新貼文"
+          aria-label="載入新貼文"
           :loading="isRefreshing"
           @click="refreshLatest"
         />

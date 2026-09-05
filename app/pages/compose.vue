@@ -15,23 +15,15 @@ async function handleSubmitPost(text: string, done: (isSuccess: boolean) => void
 </script>
 
 <template>
-  <div class="space-y-4 px-4 py-6">
-    <div>
-      <p class="label-mono text-muted">
-        02 / Compose
-      </p>
-      <h1 class="page-title mt-1 text-2xl">
-        發文
-      </h1>
-    </div>
+  <div class="space-y-4 px-4 py-4">
+    <h1 class="page-title text-lg">
+      發文
+    </h1>
     <TextComposer
       placeholder="有什麼想說的？"
       submit-label="發布"
       autofocus
       @submit="handleSubmitPost"
     />
-    <p class="text-xs text-muted">
-      送出的就是原文，不會被 AI 修改。
-    </p>
   </div>
 </template>
