@@ -4,7 +4,7 @@
 /* 視覺語言：純白底、墨黑字、粉紅、髮絲線、直角 */
 @theme {
   --font-sans: 'DM Sans', 'Noto Sans TC', system-ui, sans-serif;
-  --font-display: 'Bricolage Grotesque', 'Noto Sans TC', system-ui, sans-serif;
+  --font-display: 'Noto Sans TC', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', 'Noto Sans TC', ui-monospace, monospace;
 
   --color-ink: #141414;
@@ -94,13 +94,11 @@ body::after {
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
-/* 頁面大標：展示字體、全大寫、緊排 */
+/* 頁面大標與品牌字 */
 @utility page-title {
   font-family: var(--font-display);
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: -0.02em;
-  line-height: 1;
+  font-weight: 700;
+  line-height: 1.2;
 }
 
 /* 章節編號標籤：「01 / 動態牆」 */

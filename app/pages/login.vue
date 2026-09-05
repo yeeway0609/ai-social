@@ -31,7 +31,7 @@ async function handleSubmitLogin() {
       <BrandLogo
         size="size-12"
       />
-      <h1 class="page-title text-4xl normal-case">
+      <h1 class="page-title text-4xl">
         不痛 Tone
       </h1>
     </div>

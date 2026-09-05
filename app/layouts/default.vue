@@ -32,7 +32,7 @@ const activeTabIndex = computed(() => TABS.findIndex(tab => isActive(tab.to)))
           <BrandLogo
             size="size-7"
           />
-          <span class="page-title text-lg normal-case">不痛 Tone</span>
+          <span class="page-title text-lg">不痛 Tone</span>
         </NuxtLink>
         <UButton
           v-if="user"
