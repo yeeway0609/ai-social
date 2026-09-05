@@ -27,10 +27,19 @@ async function handleSubmitLogin() {
 
 <template>
   <div>
-    <h1 class="text-3xl font-semibold tracking-tight">
-      AI Social
-    </h1>
-    <p class="mt-2 text-muted">
+    <p class="label-mono text-muted">
+      00 / 登入
+    </p>
+    <div class="mt-3 flex items-center gap-3">
+      <BrandLogo
+        class="text-primary"
+        size="size-12"
+      />
+      <h1 class="page-title text-4xl normal-case">
+        不痛 Tone
+      </h1>
+    </div>
+    <p class="mt-3 text-muted">
       每個人用自己選的語氣，讀同一個世界。
     </p>
 

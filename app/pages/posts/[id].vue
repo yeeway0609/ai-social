@@ -46,11 +46,11 @@ async function handleSubmitComment(text: string, done: (isSuccess: boolean) => v
         color="neutral"
         variant="ghost"
         size="sm"
-        icon="i-lucide-arrow-left"
+        icon="i-mingcute-arrow-left-line"
         aria-label="返回"
         to="/"
       />
-      <h1 class="text-base font-semibold">
+      <h1 class="page-title text-base">
         貼文
       </h1>
     </div>
@@ -58,7 +58,7 @@ async function handleSubmitComment(text: string, done: (isSuccess: boolean) => v
     <UEmpty
       v-if="isNotFound"
       class="py-16"
-      icon="i-lucide-file-x"
+      icon="i-mingcute-file-forbid-line"
       title="貼文不存在"
       description="可能已經被作者刪除了。"
       :actions="[{ label: '回動態牆', to: '/' }]"
@@ -87,9 +87,11 @@ async function handleSubmitComment(text: string, done: (isSuccess: boolean) => v
         <h2 class="px-4 pt-4 text-sm font-medium text-muted">
           留言
         </h2>
-        <ul
+        <TransitionGroup
           v-if="comments.length"
-          class="divide-y divide-default"
+          name="list"
+          tag="ul"
+          class="relative divide-y divide-default"
         >
           <CommentItem
             v-for="comment in comments"
@@ -97,7 +99,7 @@ async function handleSubmitComment(text: string, done: (isSuccess: boolean) => v
             :comment="comment"
             @deleted="handleDeletedComment"
           />
-        </ul>
+        </TransitionGroup>
         <p
           v-else
           class="px-4 py-6 text-center text-sm text-muted"

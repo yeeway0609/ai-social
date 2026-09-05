@@ -12,17 +12,22 @@ export default defineNuxtConfig({
 
   app: {
     head: {
-      title: 'AI Social',
+      title: '不痛 Tone',
       htmlAttrs: { lang: 'zh-Hant-TW' },
-      meta: [{ name: 'viewport', content: 'width=device-width, initial-scale=1, viewport-fit=cover' }]
+      meta: [
+        { name: 'viewport', content: 'width=device-width, initial-scale=1, viewport-fit=cover' },
+        { name: 'theme-color', content: '#141414' }
+      ],
+      link: [{ rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' }]
     }
   },
 
   css: ['~/assets/css/main.css'],
 
+  // 視覺語言固定為墨黑底，不跟隨系統
   colorMode: {
-    preference: 'system',
-    fallback: 'light',
+    preference: 'dark',
+    fallback: 'dark',
     storageKey: 'ai-social-color-mode'
   },
 

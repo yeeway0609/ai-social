@@ -54,10 +54,16 @@ function handleSubmitText() {
       <UButton
         type="submit"
         size="sm"
-        :label="submitLabel"
+        class="reveal-arrow-button pr-4"
         :loading="isSubmitting"
         :disabled="!canSubmit"
-      />
+      >
+        <span class="reveal-label">{{ submitLabel }}</span>
+        <UIcon
+          class="reveal-arrow size-4"
+          name="i-mingcute-arrow-right-line"
+        />
+      </UButton>
     </div>
   </form>
 </template>

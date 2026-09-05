@@ -136,7 +136,7 @@ function handleKeydownEnter(event: KeyboardEvent) {
         color="neutral"
         variant="ghost"
         size="sm"
-        icon="i-lucide-chevron-left"
+        icon="i-mingcute-left-line"
         aria-label="回到聊天列表"
       />
       <template v-if="other">
@@ -166,14 +166,16 @@ function handleKeydownEnter(event: KeyboardEvent) {
       >
         還沒有訊息，說點什麼吧
       </p>
-      <MessageBubble
-        v-for="message in messages"
-        :key="message.id"
-        :message="message"
-        :is-pending="outgoingStatuses.get(message.id) === 'pending'"
-        :is-failed="outgoingStatuses.get(message.id) === 'failed'"
-        @retry="handleClickRetry(message)"
-      />
+      <TransitionGroup name="bubble">
+        <MessageBubble
+          v-for="message in messages"
+          :key="message.id"
+          :message="message"
+          :is-pending="outgoingStatuses.get(message.id) === 'pending'"
+          :is-failed="outgoingStatuses.get(message.id) === 'failed'"
+          @retry="handleClickRetry(message)"
+        />
+      </TransitionGroup>
     </div>
 
     <form
@@ -192,7 +194,8 @@ function handleKeydownEnter(event: KeyboardEvent) {
         />
         <UButton
           type="submit"
-          icon="i-lucide-send"
+          class="transition-transform duration-(--duration-base) ease-spring enabled:hover:-rotate-12 enabled:hover:scale-110 enabled:active:scale-95"
+          :icon="canSend ? 'i-mingcute-send-plane-fill' : 'i-mingcute-send-plane-line'"
           aria-label="送出"
           :disabled="!canSend"
         />

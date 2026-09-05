@@ -7,14 +7,19 @@ const { items: posts, sentinel, isLoadingFirstPage, isLoadingMore, isRefreshing,
 <template>
   <div>
     <div class="flex items-center justify-between px-4 py-3">
-      <h1 class="text-xl font-semibold">
-        動態牆
-      </h1>
+      <div>
+        <p class="label-mono text-muted">
+          01 / Feed
+        </p>
+        <h1 class="page-title mt-1 text-2xl">
+          動態牆
+        </h1>
+      </div>
       <UButton
         color="neutral"
         variant="ghost"
         size="sm"
-        icon="i-lucide-refresh-cw"
+        icon="i-mingcute-refresh-2-line"
         label="載入新貼文"
         :loading="isRefreshing"
         @click="refreshLatest"
@@ -39,20 +44,26 @@ const { items: posts, sentinel, isLoadingFirstPage, isLoadingMore, isRefreshing,
     <UEmpty
       v-else-if="posts.length === 0"
       class="py-16"
-      icon="i-lucide-feather"
+      icon="i-mingcute-quill-pen-line"
       title="還沒有人發文"
       description="成為第一個開口的人吧。"
-      :actions="[{ label: '發文', to: '/compose', icon: 'i-lucide-pen-line' }]"
+      :actions="[{ label: '發文', to: '/compose', icon: 'i-mingcute-quill-pen-line' }]"
     />
 
     <template v-else>
-      <PostCard
-        v-for="post in posts"
-        :key="post.id"
-        :post="post"
-        @deleted="removePost"
-        @liked="updatePost(post.id, $event)"
-      />
+      <TransitionGroup
+        name="list"
+        tag="div"
+        class="relative"
+      >
+        <PostCard
+          v-for="post in posts"
+          :key="post.id"
+          :post="post"
+          @deleted="removePost"
+          @liked="updatePost(post.id, $event)"
+        />
+      </TransitionGroup>
       <div
         ref="sentinel"
         class="flex justify-center py-6"
@@ -60,7 +71,7 @@ const { items: posts, sentinel, isLoadingFirstPage, isLoadingMore, isRefreshing,
         <UIcon
           v-if="isLoadingMore"
           class="size-5 animate-spin text-muted"
-          name="i-lucide-loader-circle"
+          name="i-mingcute-loading-3-line"
         />
         <span
           v-else-if="!hasMore"

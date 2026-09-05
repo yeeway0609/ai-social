@@ -21,7 +21,6 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.123.0",
-    "@iconify-json/lucide": "^1.2.111",
     "@neondatabase/serverless": "^1.1.0",
     "@nuxt/ui": "^4.11.0",
     "@vueuse/core": "^14.3.0",

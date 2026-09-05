@@ -25,7 +25,10 @@ async function handleClickConversation(row: ConversationSummary) {
 
 <template>
   <div class="px-4 py-6">
-    <h1 class="text-xl font-semibold">
+    <p class="label-mono text-muted">
+      03 / Chat
+    </p>
+    <h1 class="page-title mt-1 text-2xl">
       聊天
     </h1>
 
@@ -51,7 +54,7 @@ async function handleClickConversation(row: ConversationSummary) {
       class="mt-16 flex flex-col items-center gap-2 text-center text-muted"
     >
       <UIcon
-        name="i-lucide-users"
+        name="i-mingcute-group-2-line"
         class="size-10"
       />
       <p class="text-sm">
@@ -84,7 +87,7 @@ async function handleClickConversation(row: ConversationSummary) {
           </div>
           <UIcon
             v-if="openingUserId === row.other.id"
-            name="i-lucide-loader-circle"
+            name="i-mingcute-loading-3-line"
             class="size-4 animate-spin text-muted"
           />
           <span

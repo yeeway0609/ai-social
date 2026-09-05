@@ -33,9 +33,9 @@ const clockTime = computed(() => formatClockTime(props.message.createdAt))
       :class="message.isOwn ? 'items-end' : 'items-start'"
     >
       <div
-        class="rounded-2xl px-3 py-2"
+        class="rounded-md px-3 py-2"
         :class="[
-          message.isOwn ? 'rounded-br-sm bg-primary text-inverted' : 'rounded-bl-sm bg-elevated',
+          message.isOwn ? 'rounded-br-none bg-primary text-inverted glow-primary-soft' : 'rounded-bl-none border border-accented bg-elevated',
           isPending && 'opacity-70'
         ]"
       >
@@ -58,13 +58,13 @@ const clockTime = computed(() => formatClockTime(props.message.createdAt))
         color="error"
         variant="link"
         size="xs"
-        icon="i-lucide-refresh-cw"
+        icon="i-mingcute-refresh-2-line"
         label="傳送失敗，點擊重試"
         @click="emit('retry')"
       />
       <span
         v-else
-        class="px-1 text-[11px] text-muted"
+        class="px-1 font-mono text-[11px] text-muted"
       >{{ isPending ? '傳送中…' : clockTime }}</span>
     </div>
   </div>

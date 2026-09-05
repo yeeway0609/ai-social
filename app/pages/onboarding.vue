@@ -13,7 +13,7 @@ async function handleSaved() {
     <p class="text-sm text-muted">
       嗨，{{ user?.displayName }}
     </p>
-    <h1 class="mt-1 text-2xl font-semibold tracking-tight">
+    <h1 class="page-title mt-1 text-3xl">
       先選一個語氣
     </h1>
     <p class="mt-2 text-muted">

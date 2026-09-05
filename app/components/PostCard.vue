@@ -11,6 +11,8 @@ const toast = useToast()
 const isLiked = ref(props.post.isLiked)
 const likeCount = ref(props.post.likeCount)
 const isTogglingLike = ref(false)
+// 只有「按下去變成讚」才播爆開動畫，取消讚或從伺服器同步回來都不播
+const isHeartBursting = ref(false)
 const isVisibleDeleteModal = ref(false)
 const isDeleting = ref(false)
 
@@ -18,7 +20,7 @@ const postPath = computed(() => `/posts/${props.post.id}`)
 const authorPath = computed(() => `/users/${props.post.author.username}`)
 const menuItems = [{
   label: '刪除',
-  icon: 'i-lucide-trash-2',
+  icon: 'i-mingcute-delete-2-line',
   color: 'error' as const,
   onSelect: () => {
     isVisibleDeleteModal.value = true
@@ -41,6 +43,7 @@ async function handleClickLike() {
   const previous = { isLiked: isLiked.value, likeCount: likeCount.value }
   isLiked.value = !previous.isLiked
   likeCount.value = previous.likeCount + (previous.isLiked ? -1 : 1)
+  isHeartBursting.value = isLiked.value
   isTogglingLike.value = true
   try {
     const result = await $fetch<LikeResult>(`/api/posts/${props.post.id}/like`, { method: 'POST' })
@@ -72,7 +75,7 @@ async function handleClickConfirmDelete() {
 
 <template>
   <article
-    class="flex cursor-pointer gap-3 border-b border-default px-4 py-3 transition hover:bg-elevated/50"
+    class="flex cursor-pointer gap-3 border-b border-default px-4 py-3 transition-colors duration-(--duration-base) hover:bg-elevated/60"
     @click="handleClickCard"
   >
     <NuxtLink
@@ -92,7 +95,7 @@ async function handleClickConfirmDelete() {
           >
             {{ post.author.displayName }}
           </NuxtLink>
-          <span class="truncate text-muted">@{{ post.author.username }}</span>
+          <span class="truncate font-mono text-xs text-muted">@{{ post.author.username }}</span>
           <span class="text-muted">·</span>
           <time
             class="text-muted"
@@ -109,7 +112,7 @@ async function handleClickConfirmDelete() {
             color="neutral"
             variant="ghost"
             size="xs"
-            icon="i-lucide-ellipsis"
+            icon="i-mingcute-more-1-line"
             aria-label="更多"
           />
         </UDropdownMenu>
@@ -127,20 +130,34 @@ async function handleClickConfirmDelete() {
           color="neutral"
           variant="ghost"
           size="sm"
-          :class="isLiked ? 'text-red-500' : 'text-muted'"
-          icon="i-lucide-heart"
-          :ui="{ leadingIcon: isLiked ? 'fill-current' : '' }"
-          :label="likeCount ? String(likeCount) : undefined"
+          class="active:scale-90 transition-transform duration-(--duration-fast)"
+          :class="isLiked ? 'text-pulse' : 'text-muted hover:text-pulse'"
           :aria-label="isLiked ? '收回讚' : '按讚'"
           :aria-pressed="isLiked"
           @click="handleClickLike"
-        />
+        >
+          <UIcon
+            :name="isLiked ? 'i-mingcute-heart-fill' : 'i-mingcute-heart-line'"
+            class="size-5 shrink-0"
+            :class="isHeartBursting && 'animate-heart-burst'"
+            @animationend="isHeartBursting = false"
+          />
+          <span class="relative inline-grid min-w-[1ch] tabular-nums">
+            <Transition name="swap">
+              <span
+                v-if="likeCount"
+                :key="likeCount"
+                class="col-start-1 row-start-1"
+              >{{ likeCount }}</span>
+            </Transition>
+          </span>
+        </UButton>
         <UButton
-          class="text-muted"
+          class="text-muted transition-transform duration-(--duration-fast) hover:text-primary active:scale-90"
           color="neutral"
           variant="ghost"
           size="sm"
-          icon="i-lucide-message-circle"
+          icon="i-mingcute-chat-2-line"
           :label="post.commentCount ? String(post.commentCount) : undefined"
           aria-label="留言"
           :to="postPath"

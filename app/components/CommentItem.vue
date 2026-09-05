@@ -10,7 +10,7 @@ const isDeleting = ref(false)
 const authorPath = computed(() => `/users/${props.comment.author.username}`)
 const menuItems = [{
   label: '刪除',
-  icon: 'i-lucide-trash-2',
+  icon: 'i-mingcute-delete-2-line',
   color: 'error' as const,
   onSelect: () => {
     isVisibleDeleteModal.value = true
@@ -53,7 +53,7 @@ async function handleClickConfirmDelete() {
           >
             {{ comment.author.displayName }}
           </NuxtLink>
-          <span class="truncate text-muted">@{{ comment.author.username }}</span>
+          <span class="truncate font-mono text-xs text-muted">@{{ comment.author.username }}</span>
           <span class="text-muted">·</span>
           <time
             class="text-muted"
@@ -70,7 +70,7 @@ async function handleClickConfirmDelete() {
             color="neutral"
             variant="ghost"
             size="xs"
-            icon="i-lucide-ellipsis"
+            icon="i-mingcute-more-1-line"
             aria-label="更多"
           />
         </UDropdownMenu>

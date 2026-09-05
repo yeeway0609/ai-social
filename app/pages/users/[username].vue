@@ -20,7 +20,7 @@ const isOwnProfile = computed(() => !!profile.value && profile.value.id === curr
     <UEmpty
       v-if="isNotFound"
       class="py-16"
-      icon="i-lucide-user-x"
+      icon="i-mingcute-user-x-line"
       title="使用者不存在"
       :actions="[{ label: '回動態牆', to: '/' }]"
     />
@@ -36,7 +36,7 @@ const isOwnProfile = computed(() => !!profile.value && profile.value.id === curr
             size="lg"
           />
           <div class="min-w-0">
-            <h1 class="truncate text-xl font-semibold">
+            <h1 class="truncate font-display text-2xl font-bold tracking-tight">
               {{ profile.displayName }}
             </h1>
             <p class="truncate text-sm text-muted">
@@ -59,7 +59,7 @@ const isOwnProfile = computed(() => !!profile.value && profile.value.id === curr
           color="neutral"
           variant="outline"
           size="sm"
-          icon="i-lucide-settings"
+          icon="i-mingcute-settings-3-line"
           label="設定"
           to="/settings"
         />
@@ -73,7 +73,7 @@ const isOwnProfile = computed(() => !!profile.value && profile.value.id === curr
           color="neutral"
           variant="ghost"
           size="xs"
-          icon="i-lucide-refresh-cw"
+          icon="i-mingcute-refresh-2-line"
           label="載入新貼文"
           :loading="isRefreshing"
           @click="refreshLatest"
@@ -117,7 +117,7 @@ const isOwnProfile = computed(() => !!profile.value && profile.value.id === curr
           <UIcon
             v-if="isLoadingMore"
             class="size-5 animate-spin text-muted"
-            name="i-lucide-loader-circle"
+            name="i-mingcute-loading-3-line"
           />
           <span
             v-else-if="!hasMore"

@@ -15,7 +15,7 @@ const initial = computed(() => Array.from(props.user.displayName)[0] ?? props.us
 
 <template>
   <span
-    class="inline-flex shrink-0 items-center justify-center rounded-full font-semibold text-white select-none"
+    class="inline-flex shrink-0 items-center justify-center rounded-full font-display font-bold select-none"
     :class="[SIZE_CLASSES[size], avatarColorFor(user.username)]"
     :title="user.displayName"
   >

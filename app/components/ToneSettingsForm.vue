@@ -50,20 +50,31 @@ async function handleSubmitSettings() {
       <label
         v-for="option in TONES"
         :key="option.id"
-        class="flex cursor-pointer gap-3 rounded-lg border p-3 transition"
-        :class="tone === option.id ? 'border-primary bg-primary/5' : 'border-default hover:bg-elevated'"
+        class="relative flex cursor-pointer gap-3 rounded-sm border p-3 transition-all duration-(--duration-base) ease-out-soft active:scale-[0.99]"
+        :class="tone === option.id ? 'border-primary bg-primary/5 glow-primary-soft' : 'border-accented hover:bg-elevated'"
       >
         <input
           v-model="tone"
-          class="mt-1 accent-primary"
+          class="sr-only"
           type="radio"
           name="tone"
           :value="option.id"
         >
+        <span
+          class="mt-1 flex size-5 shrink-0 items-center justify-center rounded-full border transition-colors duration-(--duration-base)"
+          :class="tone === option.id ? 'border-primary bg-primary text-inverted' : 'border-default'"
+          aria-hidden="true"
+        >
+          <UIcon
+            v-if="tone === option.id"
+            name="i-mingcute-check-line"
+            class="size-3.5 animate-pop-in"
+          />
+        </span>
         <span class="min-w-0 flex-1">
           <span class="block font-medium">{{ option.label }}</span>
           <span class="block text-sm text-muted">{{ option.description }}</span>
-          <span class="mt-1.5 block rounded bg-elevated px-2 py-1 text-sm">「{{ option.sample }}」</span>
+          <span class="mt-1.5 block border-l-2 border-primary/60 bg-elevated px-2 py-1 text-sm">「{{ option.sample }}」</span>
         </span>
       </label>
     </fieldset>

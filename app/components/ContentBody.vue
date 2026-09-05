@@ -80,44 +80,55 @@ async function handleClickReveal() {
     ref="root"
     class="min-w-0"
   >
-    <div
-      v-if="isLoading"
-      class="space-y-2 py-0.5"
+    <Transition
+      name="swap"
+      mode="out-in"
     >
-      <USkeleton class="h-4 w-full" />
-      <USkeleton class="h-4 w-4/5" />
-    </div>
-    <p
-      v-else
-      class="whitespace-pre-wrap break-words leading-relaxed"
-      :class="compact ? 'text-sm' : 'text-[15px]'"
-    >
-      {{ displayText }}
-    </p>
+      <div
+        v-if="isLoading"
+        class="space-y-2 py-0.5"
+      >
+        <USkeleton class="h-4 w-full" />
+        <USkeleton class="h-4 w-4/5" />
+      </div>
+      <p
+        v-else
+        :key="displayText ?? ''"
+        class="whitespace-pre-wrap break-words leading-relaxed"
+        :class="compact ? 'text-sm' : 'text-[15px]'"
+      >
+        {{ displayText }}
+      </p>
+    </Transition>
 
     <div class="mt-1.5 flex flex-wrap items-center gap-1.5">
-      <template v-if="!isLoading">
+      <Transition
+        name="swap"
+        mode="out-in"
+      >
         <UBadge
-          v-if="isOriginalShown"
+          v-if="!isLoading && isOriginalShown"
+          key="original"
           color="neutral"
           variant="subtle"
           size="sm"
-          icon="i-lucide-quote"
+          icon="i-mingcute-quote-left-line"
         >
           原文
         </UBadge>
         <UBadge
-          v-else
+          v-else-if="!isLoading"
+          key="rewritten"
           color="primary"
           variant="subtle"
           size="sm"
-          icon="i-lucide-sparkles"
+          icon="i-mingcute-sparkles-2-fill"
         >
           AI 改寫<template v-if="scaleLabel">
             ・{{ scaleLabel }}
           </template>
         </UBadge>
-      </template>
+      </Transition>
       <UButton
         v-if="canReveal"
         color="neutral"
