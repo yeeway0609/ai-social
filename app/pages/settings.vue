@@ -11,8 +11,7 @@ const provider = ref<AiProvider>('anthropic')
 const apiKey = ref('')
 const isSavingKey = ref(false)
 
-const PROVIDER_LABELS: Record<AiProvider, string> = { anthropic: 'Anthropic', openai: 'OpenAI' }
-const providerItems = AI_PROVIDERS.map(id => ({ label: PROVIDER_LABELS[id], value: id }))
+const providerItems = AI_PROVIDERS.map(id => ({ label: AI_PROVIDER_LABELS[id], value: id }))
 
 async function handleSaved() {
   toast.add({ title: '語氣已更新', color: 'success' })
@@ -75,7 +74,7 @@ async function handleClickDeleteKey(target: AiProvider) {
           :key="credential.provider"
           class="flex items-center justify-between rounded-lg border border-default px-3 py-2 text-sm"
         >
-          <span>{{ PROVIDER_LABELS[credential.provider] }} <span class="font-mono text-muted">…{{ credential.hint }}</span></span>
+          <span>{{ AI_PROVIDER_LABELS[credential.provider] }} <span class="font-mono text-muted">…{{ credential.hint }}</span></span>
           <UButton
             color="neutral"
             variant="ghost"

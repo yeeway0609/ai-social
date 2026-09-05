@@ -15,7 +15,8 @@
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
-    "db:seed": "node --env-file=.env scripts/seed.ts"
+    "db:seed": "node --env-file=.env scripts/seed.ts",
+    "prerender": "node --env-file=.env scripts/prerender.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.123.0",

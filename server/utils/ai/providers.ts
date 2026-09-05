@@ -37,11 +37,25 @@ const openai: RewriteFn = async ({ apiKey, model, system, original, timeoutMs })
   return response.output_text.trim()
 }
 
-export const REWRITE_FNS: Record<AiProvider, RewriteFn> = { anthropic, openai }
+// OpenRouter 相容 OpenAI 的 chat completions；免費模型帶 :free 後綴，額度由 OpenRouter 帳戶決定
+const openrouter: RewriteFn = async ({ apiKey, model, system, original, timeoutMs }) => {
+  const response = await new OpenAI({
+    apiKey,
+    baseURL: 'https://openrouter.ai/api/v1',
+    timeout: timeoutMs,
+    maxRetries: 0
+  }).chat.completions.create({
+    model,
+    messages: [{ role: 'system', content: system }, { role: 'user', content: original }]
+  })
+  return response.choices[0]?.message.content?.trim() ?? ''
+}
+
+export const REWRITE_FNS: Record<AiProvider, RewriteFn> = { anthropic, openai, openrouter }
 
 export function modelFor(provider: AiProvider) {
   const { ai } = useRuntimeConfig()
-  return provider === 'anthropic' ? ai.modelAnthropic : ai.modelOpenai
+  return { anthropic: ai.modelAnthropic, openai: ai.modelOpenai, openrouter: ai.modelOpenrouter }[provider]
 }
 
 /** SDK 的逾時與額度錯誤各自對應不同的前端處置（重試 vs 導去設定金鑰），所以分開辨識。 */

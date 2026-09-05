@@ -24,7 +24,7 @@ let poolCursor = 0
 
 function pool(provider: AiProvider): string[] {
   const { ai } = useRuntimeConfig()
-  const raw = provider === 'anthropic' ? ai.poolAnthropic : ai.poolOpenai
+  const raw = { anthropic: ai.poolAnthropic, openai: ai.poolOpenai, openrouter: ai.poolOpenrouter }[provider]
   return raw.split(',').map(k => k.trim()).filter(Boolean)
 }
 

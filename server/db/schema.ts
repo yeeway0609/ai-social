@@ -71,3 +71,20 @@ export const messages = pgTable('messages', {
   originalText: text('original_text').notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
 }, table => [index('messages_conversation_idx').on(table.conversationId, table.createdAt, table.id)])
+
+/**
+ * 改寫快取。預設語氣的改寫全站共用（同語氣所有讀者看到同一份），
+ * 帶自訂指示的改寫以指示的雜湊區分，只有寫了一樣指示的人會命中。
+ * 內容被刪時改寫沒有外鍵可 cascade（kind 不同表），由刪除端點順手清。
+ */
+export const renditions = pgTable('renditions', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  kind: text('kind').notNull(),
+  contentId: uuid('content_id').notNull(),
+  tone: text('tone').notNull(),
+  // 預設語氣為空字串；自訂指示存 sha256，讓唯一索引能涵蓋兩種情況
+  instructionHash: text('instruction_hash').notNull().default(''),
+  text: text('text').notNull(),
+  scale: text('scale').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
+}, table => [uniqueIndex('renditions_key').on(table.kind, table.contentId, table.tone, table.instructionHash)])

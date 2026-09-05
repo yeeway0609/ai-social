@@ -14,6 +14,12 @@ export default defineEventHandler(async (event): Promise<CurrentUser> => {
   const userId = requireUserId(event)
   const { tone, customInstruction } = body.parse(await readBody(event))
 
+  // 自訂指示只給有自備金鑰的人：它的改寫不進共用快取，每次都燒讀者自己的額度
+  if (customInstruction) {
+    const hasOwnCredential = (await useDb().$count(schema.aiCredentials, eq(schema.aiCredentials.userId, userId))) > 0
+    if (!hasOwnCredential) throw createError({ statusCode: 400, statusMessage: 'credential_required' })
+  }
+
   await useDb()
     .update(schema.users)
     .set({

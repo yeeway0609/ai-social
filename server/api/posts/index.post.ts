@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { schema, useDb } from '../../db'
+import { schedulePregeneration } from '../../utils/ai/render'
 import { getPost } from '../../utils/posts'
 import { requireUserId } from '../../utils/session'
 
@@ -13,6 +14,8 @@ export default defineEventHandler(async (event): Promise<PostSummary> => {
     .insert(schema.posts)
     .values({ authorId, originalText: text })
     .returning({ id: schema.posts.id })
+  // 預產所有預設語氣的改寫在背景跑，發文本身不等它
+  schedulePregeneration(event, 'post', post!.id, authorId)
   setResponseStatus(event, 201)
   return (await getPost(post!.id, authorId))!
 })

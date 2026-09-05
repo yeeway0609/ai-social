@@ -1,6 +1,7 @@
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 import { schema, useDb } from '../../../db'
+import { schedulePregeneration } from '../../../utils/ai/render'
 import { requireUserId } from '../../../utils/session'
 import { userSummaryColumns } from '../../../utils/users'
 
@@ -22,6 +23,7 @@ export default defineEventHandler(async (event): Promise<CommentSummary> => {
     .returning({ id: schema.comments.id, createdAt: schema.comments.createdAt })
   const [author] = await db.select(userSummaryColumns).from(schema.users).where(eq(schema.users.id, authorId)).limit(1)
 
+  schedulePregeneration(event, 'comment', comment!.id, authorId)
   setResponseStatus(event, 201)
   return {
     id: comment!.id,
