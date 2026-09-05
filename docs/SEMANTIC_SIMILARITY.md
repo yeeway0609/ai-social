@@ -26,4 +26,4 @@ node --test tests/semanticSimilarity.test.mjs tests/semanticSimilarityCalibratio
 
 測試使用人工向量與模擬 HTTP 回應，不發送真實貼文、不耗用模型額度。它驗證計算與錯誤處理；繁體中文校準樣本與真實金鑰的實測結果見 [SEMANTIC_SIMILARITY_CALIBRATION.md](SEMANTIC_SIMILARITY_CALIBRATION.md)。
 
-目前已完成計算模組並接上寫入時預產流程。有效改寫會在輸出驗證通過後評估；只有 `score > 0.8` 且不等同 1 的改寫會被採用並寫入 `renditions`。評估失敗或 `score <= 0.8` 時不寫入該語氣改寫；`score` 等同 1 時視為沒有實質改寫，讀取時顯示原文且不標示為改寫。已建立本地繁體中文校準樣本與排序測試，真實 NIM embedding 金鑰實測仍需持續校準，不可把舊 `scale` 字串直接當成 embedding 分數。
+目前已完成計算模組並接上寫入時預產流程。有效改寫會在輸出驗證通過後評估；只有 `score > 0.5` 且不等同 1 的改寫會被採用並寫入 `renditions`。評估失敗或 `score <= 0.5` 時不寫入該語氣改寫；`score` 等同 1 時視為沒有實質改寫，讀取時顯示原文且不標示為改寫。已建立本地繁體中文校準樣本與排序測試，真實 NIM embedding 金鑰實測仍需持續校準，不可把舊 `scale` 字串直接當成 embedding 分數。

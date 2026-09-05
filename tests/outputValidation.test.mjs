@@ -37,7 +37,7 @@ test('網址、數字、金額、標籤與帳號必須原樣保留', () => {
 })
 
 test('語意相似度必須高於門檻且不可缺少分數', () => {
-  assert.equal(MIN_SEMANTIC_SIMILARITY_SCORE, 0.8)
+  assert.equal(MIN_SEMANTIC_SIMILARITY_SCORE, 0.5)
   assert.doesNotThrow(() => validateSemanticSimilarityForRendition({
     status: 'ok',
     score: 0.801,
@@ -46,7 +46,7 @@ test('語意相似度必須高於門檻且不可缺少分數', () => {
   }))
   expectSimilarityCode(() => validateSemanticSimilarityForRendition({
     status: 'ok',
-    score: 0.8,
+    score: 0.5,
     model: 'text-embedding-3-small',
     version: 'cosine-nfc-v1'
   }), 'semantic_similarity_too_low')
@@ -84,7 +84,7 @@ test('所有語氣 prompt 都包含共通不變量與語意相似度要求', () 
   for (const tone of TONES) {
     assert.match(prompt, /不可曲解原文立場/)
     assert.match(prompt, /不可增加、刪除或改動任何客觀事實、數字、人物/)
-    assert.match(prompt, /語意相似度都必須高於 80%/)
+    assert.match(prompt, /語意相似度都必須高於 50%/)
     assert.match(prompt, /採最小改寫原則/)
     assert.match(prompt, /優先保留原句資訊順序與句意結構/)
     assert.match(prompt, /必須保留否定、程度、副詞、條件、時間順序、因果關係與不確定語氣/)

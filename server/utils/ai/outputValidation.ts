@@ -3,7 +3,7 @@ import type { RenditionError } from '../../../shared/types/api.ts'
 import type { SemanticSimilarityResult } from '../../../shared/types/semanticSimilarity.ts'
 
 const MAX_RENDITION_LENGTH_MULTIPLIER = 2
-export const MIN_SEMANTIC_SIMILARITY_SCORE = 0.8
+export const MIN_SEMANTIC_SIMILARITY_SCORE = 0.5
 const SEMANTIC_SIMILARITY_EXACT_MATCH_EPSILON = 1e-9
 
 const EXACT_TOKEN_PATTERNS = [
