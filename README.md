@@ -10,7 +10,8 @@
 </p>
 
 <p align="center">
-  <a href="https://butong-tone-alex-sus-projects.vercel.app">線上 Demo</a>｜
+  <a href="https://butong-tone.vercel.app">線上 Demo</a>｜
+  <a href="https://canva.link/8i5hu1mb34i4zb0">簡報介紹</a>｜
   <a href="#技術架構">技術架構</a>｜
   <a href="#執行方式">執行方式</a>｜
   <a href="#來源說明">來源說明</a>
