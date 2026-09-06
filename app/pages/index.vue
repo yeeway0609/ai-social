@@ -15,7 +15,7 @@ const { items: posts, sentinel, isLoadingFirstPage, isLoadingMore, isRefreshing,
         icon="i-mingcute-refresh-2-line"
         aria-label="載入新貼文"
         :loading="isRefreshing"
-        @click="refreshLatest"
+        @click="refreshLatest()"
       />
     </div>
 

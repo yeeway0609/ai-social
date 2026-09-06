@@ -7,6 +7,8 @@ export async function usePostFeed(key: string, url: string) {
   const nextCursor = ref<string | null>(null)
   const isLoadingMore = ref(false)
   const isRefreshing = ref(false)
+  /** 背景輪詢進行中；與手動重抓互斥，但不影響畫面。 */
+  let isPolling = false
   const sentinel = ref<HTMLElement | null>(null)
 
   // 這支 composable 內部會 await，而 await 之後 Vue 就找不到元件實例；
@@ -33,6 +35,9 @@ export async function usePostFeed(key: string, url: string) {
     if (firstPage.value) refreshLatest()
   })
 
+  // 背景輪詢不轉重新整理鈕的 loading，否則每三秒閃一次
+  useIntervalFn(() => refreshLatest({ isSilent: true }), FEED_POLL_INTERVAL_MS)
+
   await asyncData
 
   async function loadMore() {
@@ -49,9 +54,10 @@ export async function usePostFeed(key: string, url: string) {
   }
 
   /** 重抓第一頁：新貼文插到最上方，已在列表裡的就地更新讚數與留言數。 */
-  async function refreshLatest() {
-    if (isRefreshing.value) return
-    isRefreshing.value = true
+  async function refreshLatest(options: { isSilent?: boolean } = {}) {
+    if (isRefreshing.value || isPolling) return
+    if (options.isSilent) isPolling = true
+    else isRefreshing.value = true
     try {
       const page = await $fetch<Page<PostSummary>>(url)
       const wasEmpty = items.value.length === 0
@@ -66,6 +72,7 @@ export async function usePostFeed(key: string, url: string) {
       if (wasEmpty) nextCursor.value = page.nextCursor
     } finally {
       isRefreshing.value = false
+      isPolling = false
     }
   }
 
