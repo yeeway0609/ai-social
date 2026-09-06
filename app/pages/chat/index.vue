@@ -3,7 +3,7 @@ useHead({ title: '聊天' })
 
 const toast = useToast()
 
-const { data: conversations, status } = await useAsyncData('conversations', () => $fetch<ConversationSummary[]>('/api/conversations'), { server: false, default: () => [] })
+const { data: conversations, status } = await useAsyncData('conversations', () => $fetch<ConversationSummary[]>('/api/conversations'), { server: false, default: () => [], getCachedData: () => undefined })
 
 const openingUserId = ref<string | null>(null)
 

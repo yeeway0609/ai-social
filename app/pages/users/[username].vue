@@ -6,7 +6,7 @@ const { user: currentUser, logout } = useAuth()
 
 const username = route.params.username as string
 
-const { data: profile, error: profileError } = await useAsyncData(`user-${username}`, () => $fetch<UserSummary>(`/api/users/${username}`), { server: false })
+const { data: profile, error: profileError } = await useAsyncData(`user-${username}`, () => $fetch<UserSummary>(`/api/users/${username}`), { server: false, getCachedData: () => undefined })
 const { items: posts, sentinel, isLoadingFirstPage, isLoadingMore, isRefreshing, hasMore, refreshLatest, removePost, updatePost } = await usePostFeed(`user-${username}-posts`, `/api/users/${username}/posts`)
 
 const isNotFound = computed(() => profileError.value instanceof FetchError && profileError.value.status === 404)
@@ -74,7 +74,7 @@ const isOwnProfile = computed(() => !!profile.value && profile.value.id === curr
           icon="i-mingcute-refresh-2-line"
           aria-label="載入新貼文"
           :loading="isRefreshing"
-          @click="refreshLatest"
+          @click="refreshLatest()"
         />
       </div>
 

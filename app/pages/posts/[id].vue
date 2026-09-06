@@ -6,8 +6,8 @@ const toast = useToast()
 
 const postId = route.params.id as string
 
-const { data: post, status: postStatus, error: postError } = await useAsyncData(`post-${postId}`, () => $fetch<PostSummary>(`/api/posts/${postId}`), { server: false })
-const { data: comments } = await useAsyncData(`post-${postId}-comments`, () => $fetch<CommentSummary[]>(`/api/posts/${postId}/comments`), { server: false, default: () => [] })
+const { data: post, status: postStatus, error: postError } = await useAsyncData(`post-${postId}`, () => $fetch<PostSummary>(`/api/posts/${postId}`), { server: false, getCachedData: () => undefined })
+const { data: comments } = await useAsyncData(`post-${postId}-comments`, () => $fetch<CommentSummary[]>(`/api/posts/${postId}/comments`), { server: false, default: () => [], getCachedData: () => undefined })
 
 const isNotFound = computed(() => postError.value instanceof FetchError && postError.value.status === 404)
 const isLoadingPost = computed(() => postStatus.value === 'pending' && !post.value)
